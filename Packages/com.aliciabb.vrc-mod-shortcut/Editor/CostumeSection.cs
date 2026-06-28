@@ -74,6 +74,23 @@ namespace Vrcmst
             }
         }
 
+        private GUIStyle _wrappedLabelStyle;
+
+        // 説明文がWindow幅で切れずに折り返されるようにするスタイル。
+        // EditorStyles系はGUI描画中以外でのアクセスを避けるため、フィールド初期化子ではなく遅延生成する。
+        private GUIStyle WrappedLabelStyle
+        {
+            get
+            {
+                if (_wrappedLabelStyle == null)
+                {
+                    _wrappedLabelStyle = new GUIStyle(EditorStyles.label) { wordWrap = true };
+                }
+
+                return _wrappedLabelStyle;
+            }
+        }
+
         public void DrawGUI(GameObject avatarRoot, DistanceFadeSection fadeSection)
         {
             EditorGUILayout.LabelField("③ アイテム追加 (プレハブ → 格納先)", EditorStyles.boldLabel);
@@ -100,16 +117,10 @@ namespace Vrcmst
             itemTypeIndex = EditorGUILayout.Popup("メニュー作成タイプ", itemTypeIndex, ItemTypeLabels);
             _itemType = ItemTypeValues[itemTypeIndex];
 
-            var autoApplyDistanceFade = EditorGUILayout.ToggleLeft("追加時に距離フェードを一括適用", AutoApplyDistanceFade);
-            if (autoApplyDistanceFade != AutoApplyDistanceFade)
-            {
-                _autoApplyDistanceFade = autoApplyDistanceFade;
-                EditorPrefs.SetBool(AutoApplyDistanceFadePrefKey, autoApplyDistanceFade);
-            }
-
             var replaceNameWithPrefabName = EditorGUILayout.ToggleLeft(
                 $"プレハブ割り当て時にアバター名へ反映する(仮名_{ModularAvatarOps.DuplicateNameMarker}は置き換え、それ以外は末尾に追加)",
-                ReplaceNameWithPrefabName);
+                ReplaceNameWithPrefabName,
+                WrappedLabelStyle);
             if (replaceNameWithPrefabName != ReplaceNameWithPrefabName)
             {
                 _replaceNameWithPrefabName = replaceNameWithPrefabName;
@@ -118,16 +129,8 @@ namespace Vrcmst
 
             if (ReplaceNameWithPrefabName && _prefab != null)
             {
-                _predictedAvatarName = EditorGUILayout.TextField("変更後アバター名(予測・編集可)", _predictedAvatarName);
-            }
-
-            var applyMeshSettingsInherit = EditorGUILayout.ToggleLeft(
-                "MA Mesh Settingsが\"Set\"の場合、\"SetOrInherit\"に変更する(親に設定があれば継承)",
-                ApplyMeshSettingsInherit);
-            if (applyMeshSettingsInherit != ApplyMeshSettingsInherit)
-            {
-                _applyMeshSettingsInherit = applyMeshSettingsInherit;
-                EditorPrefs.SetBool(ApplyMeshSettingsInheritPrefKey, applyMeshSettingsInherit);
+                EditorGUILayout.LabelField("変更後アバター名(予測・編集可)", WrappedLabelStyle);
+                _predictedAvatarName = EditorGUILayout.TextField(_predictedAvatarName);
             }
 
             using (new EditorGUI.DisabledScope(_prefab == null))
@@ -136,6 +139,26 @@ namespace Vrcmst
                 {
                     AddItem(avatarRoot, categoryName, fadeSection);
                 }
+            }
+
+            var applyMeshSettingsInherit = EditorGUILayout.ToggleLeft(
+                "MA Mesh Settingsが\"Set\"の場合、\"SetOrInherit\"に変更する(親に設定があれば継承)",
+                ApplyMeshSettingsInherit,
+                WrappedLabelStyle);
+            if (applyMeshSettingsInherit != ApplyMeshSettingsInherit)
+            {
+                _applyMeshSettingsInherit = applyMeshSettingsInherit;
+                EditorPrefs.SetBool(ApplyMeshSettingsInheritPrefKey, applyMeshSettingsInherit);
+            }
+
+            var autoApplyDistanceFade = EditorGUILayout.ToggleLeft(
+                "追加時に距離フェードを一括適用",
+                AutoApplyDistanceFade,
+                WrappedLabelStyle);
+            if (autoApplyDistanceFade != AutoApplyDistanceFade)
+            {
+                _autoApplyDistanceFade = autoApplyDistanceFade;
+                EditorPrefs.SetBool(AutoApplyDistanceFadePrefKey, autoApplyDistanceFade);
             }
         }
 

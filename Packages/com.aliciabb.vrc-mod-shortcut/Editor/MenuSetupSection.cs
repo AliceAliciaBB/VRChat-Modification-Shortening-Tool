@@ -15,11 +15,14 @@ namespace Vrcmst
         {
             EditorGUILayout.LabelField("① メニュー初期セットアップ", EditorStyles.boldLabel);
 
-            using (new EditorGUI.DisabledScope(avatarRoot == null))
+            if (GetMenuObjRoot(avatarRoot) == null)
             {
-                if (GUILayout.Button("M_menuObj を用意"))
+                using (new EditorGUI.DisabledScope(avatarRoot == null))
                 {
-                    ModularAvatarOps.EnsureMenuObjRoot(avatarRoot);
+                    if (GUILayout.Button("M_menuObj を用意"))
+                    {
+                        ModularAvatarOps.EnsureMenuObjRoot(avatarRoot);
+                    }
                 }
             }
 
