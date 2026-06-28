@@ -25,6 +25,7 @@ namespace Vrcmst
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("② 格納先作成 (O_<name> / M_<name>)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("例) 衣装, 髪型, アクセサリ, ギミック など", EditorStyles.miniLabel);
 
             _categoryName = EditorGUILayout.TextField("格納先名", _categoryName);
 
