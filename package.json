@@ -7,6 +7,7 @@
   "author": {
     "name": "AliceAliciaBB"
   },
+  "license": "MIT",
   "vpmDependencies": {
     "nadena.dev.modular-avatar": ">=1.10.0",
     "com.vrchat.avatars": ">=3.5.0"
