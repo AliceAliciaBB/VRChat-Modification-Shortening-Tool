@@ -1,7 +1,7 @@
 {
   "name": "com.aliciabb.vrc-mod-shortcut",
   "displayName": "VRChat Modification Shortening Tool",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "unity": "2022.3",
   "description": "Modular Avatarを使ったVRChatアバター改変の定型作業(メニュー構築・衣装セットアップ・トグル生成・距離フェード一括適用・髪型排他グループ化)をEditorWindowに集約するツール。",
   "author": {
