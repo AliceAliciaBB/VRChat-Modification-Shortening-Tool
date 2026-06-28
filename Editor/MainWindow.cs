@@ -15,7 +15,7 @@ namespace Vrcmst
         private readonly HairstyleSection _hairstyleSection = new HairstyleSection();
         private readonly DistanceFadeSection _distanceFadeSection = new DistanceFadeSection();
 
-        [MenuItem("Tools/VRChat改変ショートカット")]
+        [MenuItem("ALICILIA/VRChat改変ショートカット")]
         public static void ShowWindow()
         {
             GetWindow<MainWindow>("改変ショートカット");
