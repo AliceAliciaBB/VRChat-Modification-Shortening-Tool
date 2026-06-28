@@ -227,11 +227,12 @@ namespace Vrcmst
                 EditorGUILayout.LabelField("メニュー名の翻訳", EditorStyles.miniBoldLabel);
 
                 EditorGUILayout.LabelField("元の名前(参考・コピー用)", WrappedLabelStyle);
+                var originalNamesText = string.Join("\n", _pendingTranslationItems.Select(item => item != null ? item.Control.name : ""));
                 using (new EditorGUI.DisabledScope(true))
                 {
                     EditorGUILayout.TextArea(
-                        string.Join("\n", _pendingTranslationItems.Select(item => item != null ? item.Control.name : "")),
-                        GUILayout.Height(LineAreaHeight(_pendingTranslationItems.Count)));
+                        originalNamesText,
+                        GUILayout.Height(EditorStyles.textArea.CalcHeight(new GUIContent(originalNamesText), EditorGUIUtility.currentViewWidth - 40f)));
                 }
 
                 EditorGUILayout.LabelField(
@@ -241,7 +242,7 @@ namespace Vrcmst
 
                 _pendingTranslationText = EditorGUILayout.TextArea(
                     _pendingTranslationText,
-                    GUILayout.Height(LineAreaHeight(_pendingTranslationItems.Count)));
+                    GUILayout.Height(EditorStyles.textArea.CalcHeight(new GUIContent(_pendingTranslationText), EditorGUIUtility.currentViewWidth - 40f)));
 
                 var lineCount = _pendingTranslationText
                     .Split('\n')
@@ -276,11 +277,6 @@ namespace Vrcmst
             }
         }
 
-        private static float LineAreaHeight(int lineCount)
-        {
-            return Mathf.Clamp(lineCount * 18f + 6f, 36f, 200f);
-        }
-
         private void AutoFillTranslations()
         {
             var lines = _pendingTranslationText
@@ -292,6 +288,10 @@ namespace Vrcmst
             {
                 var translated = TranslationOps.Translate(lines, TranslateFromLanguage, TranslateToLanguage);
                 _pendingTranslationText = string.Join("\n", translated);
+
+                // テキストエリアがフォーカスされていると、Unity内部の編集中キャッシュが優先されて
+                // コードからの代入が画面に反映されないため、フォーカスを外して再同期させる。
+                GUI.FocusControl(null);
             }
             catch (System.Exception e)
             {
