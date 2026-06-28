@@ -20,9 +20,7 @@ namespace Vrcmst
         private static readonly string[] ItemTypeLabels = { "衣装", "髪型", "作成しない" };
         private static readonly ItemType[] ItemTypeValues = { ItemType.Costume, ItemType.Hairstyle, ItemType.Other };
 
-        private const string AutoApplyDistanceFadePrefKey = "Vrcmst.CostumeSection.AutoApplyDistanceFade";
         private const string ReplaceNameWithPrefabNamePrefKey = "Vrcmst.CostumeSection.ReplaceNameWithPrefabName";
-        private const string ApplyMeshSettingsInheritPrefKey = "Vrcmst.CostumeSection.ApplyMeshSettingsInherit";
         private const string ShowTranslationSectionPrefKey = "Vrcmst.CostumeSection.ShowTranslationSection";
 
         private const string TranslateFromLanguage = "en";
@@ -31,9 +29,7 @@ namespace Vrcmst
         private GameObject _prefab;
         private ItemType _itemType = ItemType.Costume;
         private int _categoryIndex;
-        private bool? _autoApplyDistanceFade;
         private bool? _replaceNameWithPrefabName;
-        private bool? _applyMeshSettingsInherit;
         private bool? _showTranslationSection;
         private string _predictedAvatarName = "";
 
@@ -45,19 +41,6 @@ namespace Vrcmst
 
         // EditorPrefsはScriptableObject(MainWindow)のフィールド初期化子から呼ぶと例外になるため、
         // 実際にGUIが描画される時点まで読み込みを遅延させる。
-        private bool AutoApplyDistanceFade
-        {
-            get
-            {
-                if (_autoApplyDistanceFade == null)
-                {
-                    _autoApplyDistanceFade = EditorPrefs.GetBool(AutoApplyDistanceFadePrefKey, true);
-                }
-
-                return _autoApplyDistanceFade.Value;
-            }
-        }
-
         private bool ReplaceNameWithPrefabName
         {
             get
@@ -68,19 +51,6 @@ namespace Vrcmst
                 }
 
                 return _replaceNameWithPrefabName.Value;
-            }
-        }
-
-        private bool ApplyMeshSettingsInherit
-        {
-            get
-            {
-                if (_applyMeshSettingsInherit == null)
-                {
-                    _applyMeshSettingsInherit = EditorPrefs.GetBool(ApplyMeshSettingsInheritPrefKey, true);
-                }
-
-                return _applyMeshSettingsInherit.Value;
             }
         }
 
@@ -177,24 +147,6 @@ namespace Vrcmst
                 {
                     EditorGUILayout.LabelField("変更後アバター名(予測・編集可)", WrappedLabelStyle);
                     _predictedAvatarName = EditorGUILayout.TextField(_predictedAvatarName);
-                }
-
-                var applyMeshSettingsInherit = WrappedToggleLeft(
-                    "MA Mesh Settingsが設定の場合、親に設定があれば継承に変更する",
-                    ApplyMeshSettingsInherit);
-                if (applyMeshSettingsInherit != ApplyMeshSettingsInherit)
-                {
-                    _applyMeshSettingsInherit = applyMeshSettingsInherit;
-                    EditorPrefs.SetBool(ApplyMeshSettingsInheritPrefKey, applyMeshSettingsInherit);
-                }
-
-                var autoApplyDistanceFade = WrappedToggleLeft(
-                    "追加時に距離フェードを一括適用",
-                    AutoApplyDistanceFade);
-                if (autoApplyDistanceFade != AutoApplyDistanceFade)
-                {
-                    _autoApplyDistanceFade = autoApplyDistanceFade;
-                    EditorPrefs.SetBool(AutoApplyDistanceFadePrefKey, autoApplyDistanceFade);
                 }
 
                 var showTranslationSection = WrappedToggleLeft(
@@ -357,12 +309,12 @@ namespace Vrcmst
 
             var instance = ModularAvatarOps.InstantiatePrefabUnder(_prefab, oRoot);
 
-            if (ApplyMeshSettingsInherit)
+            if (fadeSection.ApplyMeshSettingsInheritOnAdd)
             {
                 ModularAvatarOps.ApplySetOrInheritToMeshSettings(instance);
             }
 
-            if (AutoApplyDistanceFade)
+            if (fadeSection.AutoApplyOnAdd)
             {
                 fadeSection.Apply(instance);
             }

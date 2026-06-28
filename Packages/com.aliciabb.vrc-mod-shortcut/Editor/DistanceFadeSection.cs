@@ -8,10 +8,70 @@ namespace Vrcmst
     // 単独のボタン操作としても、CostumeSection等のアイテム追加フローからも呼び出す。
     internal class DistanceFadeSection
     {
+        private const string AutoApplyOnAddPrefKey = "Vrcmst.DistanceFadeSection.AutoApplyOnAdd";
+        private const string ApplyMeshSettingsInheritOnAddPrefKey = "Vrcmst.DistanceFadeSection.ApplyMeshSettingsInheritOnAdd";
+
         public Color FadeColor = Color.black;
         public float FadeStart = 0.15f;
         public float FadeEnd = 0.01f;
         public float Strength = 1.1f;
+
+        private bool? _autoApplyOnAdd;
+        private bool? _applyMeshSettingsInheritOnAdd;
+        private GUIStyle _wrappedLabelStyle;
+
+        // ③アイテム追加時に自動的に距離フェードを一括適用するかどうか。
+        // 普段の作業中は変更頻度が低いため、距離フェードセクション側にまとめて置く。
+        public bool AutoApplyOnAdd
+        {
+            get
+            {
+                if (_autoApplyOnAdd == null)
+                {
+                    _autoApplyOnAdd = EditorPrefs.GetBool(AutoApplyOnAddPrefKey, true);
+                }
+
+                return _autoApplyOnAdd.Value;
+            }
+        }
+
+        // ③アイテム追加時にMA Mesh Settingsの"Set"を"SetOrInherit"に変更するかどうか。
+        public bool ApplyMeshSettingsInheritOnAdd
+        {
+            get
+            {
+                if (_applyMeshSettingsInheritOnAdd == null)
+                {
+                    _applyMeshSettingsInheritOnAdd = EditorPrefs.GetBool(ApplyMeshSettingsInheritOnAddPrefKey, true);
+                }
+
+                return _applyMeshSettingsInheritOnAdd.Value;
+            }
+        }
+
+        private GUIStyle WrappedLabelStyle
+        {
+            get
+            {
+                if (_wrappedLabelStyle == null)
+                {
+                    _wrappedLabelStyle = new GUIStyle(EditorStyles.label)
+                    {
+                        wordWrap = true,
+                        margin = new RectOffset(2, 2, 3, 3),
+                    };
+                }
+
+                return _wrappedLabelStyle;
+            }
+        }
+
+        private bool WrappedToggleLeft(string label, bool value)
+        {
+            var content = new GUIContent(label);
+            var rect = GUILayoutUtility.GetRect(content, WrappedLabelStyle, GUILayout.ExpandWidth(true));
+            return EditorGUI.ToggleLeft(rect, content, value, WrappedLabelStyle);
+        }
 
         public void DrawGUI()
         {
@@ -32,6 +92,29 @@ namespace Vrcmst
                 if (GUILayout.Button("選択オブジェクト以下に適用", GUILayout.Height(28)))
                 {
                     Apply(Selection.activeGameObject);
+                }
+            }
+
+            EditorGUILayout.Space();
+
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                EditorGUILayout.LabelField("③アイテム追加 詳細設定(変更頻度が低い項目)", EditorStyles.miniBoldLabel);
+
+                var autoApplyOnAdd = WrappedToggleLeft("追加時に距離フェードを一括適用", AutoApplyOnAdd);
+                if (autoApplyOnAdd != AutoApplyOnAdd)
+                {
+                    _autoApplyOnAdd = autoApplyOnAdd;
+                    EditorPrefs.SetBool(AutoApplyOnAddPrefKey, autoApplyOnAdd);
+                }
+
+                var applyMeshSettingsInheritOnAdd = WrappedToggleLeft(
+                    "MA Mesh Settingsが設定の場合、親に設定があれば継承に変更する",
+                    ApplyMeshSettingsInheritOnAdd);
+                if (applyMeshSettingsInheritOnAdd != ApplyMeshSettingsInheritOnAdd)
+                {
+                    _applyMeshSettingsInheritOnAdd = applyMeshSettingsInheritOnAdd;
+                    EditorPrefs.SetBool(ApplyMeshSettingsInheritOnAddPrefKey, applyMeshSettingsInheritOnAdd);
                 }
             }
         }
