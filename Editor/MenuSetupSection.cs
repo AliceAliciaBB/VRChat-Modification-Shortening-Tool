@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using VRC.SDK3.Avatars.ScriptableObjects;
 
 namespace Vrcmst
 {
@@ -33,7 +34,7 @@ namespace Vrcmst
                 {
                     var menuObjRoot = ModularAvatarOps.EnsureMenuObjRoot(avatarRoot);
                     ModularAvatarOps.EnsureObjectCategoryRoot(avatarRoot, _categoryName);
-                    ModularAvatarOps.EnsureMenuCategoryRoot(menuObjRoot, _categoryName);
+                    ModularAvatarOps.EnsureMenuCategoryRoot(avatarRoot, menuObjRoot, _categoryName);
                     _categoryName = "";
                 }
             }
@@ -75,6 +76,12 @@ namespace Vrcmst
             if (menuObjRoot == null) return null;
             var found = menuObjRoot.transform.Find("M_" + categoryName);
             return found != null ? found.gameObject : null;
+        }
+
+        public static VRCExpressionsMenu GetMenuAsset(GameObject avatarRoot, string categoryName)
+        {
+            var menuCategoryRoot = GetMenuCategoryRoot(avatarRoot, categoryName);
+            return menuCategoryRoot != null ? ModularAvatarOps.GetCategoryMenuAsset(menuCategoryRoot) : null;
         }
     }
 }

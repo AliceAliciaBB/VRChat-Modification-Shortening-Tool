@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using nadena.dev.modular_avatar.core;
 using nadena.dev.modular_avatar.core.editor;
 using UnityEditor;
@@ -10,11 +10,14 @@ using Object = UnityEngine.Object;
 namespace Vrcmst
 {
     // Modular Avatarのpublic Runtime/Editor APIだけを叩く共通処理。
-    // 「Create Toggle for Selection」「Install Targetの設定」はMA本体側がinternal実装のため、
-    // MA本体(ToggleCreatorShortcut.cs / MenuInstallerEditor.cs)と同じ手順を直接GameObject操作で再現している。
+    // 「Create Toggle for Selection」はMA本体側がinternal実装のため、
+    // MA本体(ToggleCreatorShortcut.cs)と同じ手順を直接GameObject操作で再現している。
+    // メニューのインストール先は、MAのinternalな ModularAvatarMenuInstallTarget には依存せず、
+    // カテゴリごとに実体のVRCExpressionsMenuアセットを作って installTargetMenu に直接割り当てる方式にしている。
     internal static class ModularAvatarOps
     {
         private const string ArmatureObjectName = "Armature";
+        private const string GeneratedMenuFolder = "Assets/VMST/GeneratedMenus";
 
         public static GameObject EnsureMenuObjRoot(GameObject avatarRoot)
         {
@@ -26,7 +29,7 @@ namespace Vrcmst
             return FindOrCreateChild(avatarRoot, "O_" + categoryName);
         }
 
-        public static GameObject EnsureMenuCategoryRoot(GameObject menuObjRoot, string categoryName)
+        public static GameObject EnsureMenuCategoryRoot(GameObject avatarRoot, GameObject menuObjRoot, string categoryName)
         {
             var objName = "M_" + categoryName;
             var existing = menuObjRoot.transform.Find(objName);
@@ -36,19 +39,65 @@ namespace Vrcmst
             Undo.RegisterCreatedObjectUndo(obj, "Create Menu Category");
             obj.transform.SetParent(menuObjRoot.transform, false);
 
+            var menuAsset = CreateMenuAsset(avatarRoot.name, categoryName);
+
             var menuItem = obj.AddComponent<ModularAvatarMenuItem>();
-            menuItem.InitSettings();
+            menuItem.MenuSource = SubmenuSource.MenuAsset;
             menuItem.Control = new VRCExpressionsMenu.Control
             {
                 type = VRCExpressionsMenu.Control.ControlType.SubMenu,
                 name = categoryName,
+                subMenu = menuAsset,
             };
-            menuItem.MenuSource = SubmenuSource.Children;
 
             var installer = obj.AddComponent<ModularAvatarMenuInstaller>();
             installer.installTargetMenu = null; // ルート(アバター直下)メニューへインストール
 
             return obj;
+        }
+
+        // M_<name>のサブメニュー先として使っている実体のVRCExpressionsMenuアセットを取得する
+        public static VRCExpressionsMenu GetCategoryMenuAsset(GameObject menuCategoryRoot)
+        {
+            var item = menuCategoryRoot?.GetComponent<ModularAvatarMenuItem>();
+            return item != null ? item.Control.subMenu : null;
+        }
+
+        private static VRCExpressionsMenu CreateMenuAsset(string avatarName, string categoryName)
+        {
+            EnsureFolder(GeneratedMenuFolder);
+
+            var fileName = $"{MakeSafeFileName(avatarName)}_M_{MakeSafeFileName(categoryName)}.asset";
+            var path = AssetDatabase.GenerateUniqueAssetPath($"{GeneratedMenuFolder}/{fileName}");
+
+            var menu = ScriptableObject.CreateInstance<VRCExpressionsMenu>();
+            AssetDatabase.CreateAsset(menu, path);
+            AssetDatabase.SaveAssets();
+            return menu;
+        }
+
+        private static void EnsureFolder(string folderPath)
+        {
+            if (AssetDatabase.IsValidFolder(folderPath)) return;
+
+            var parts = folderPath.Split('/');
+            var current = parts[0];
+            for (var i = 1; i < parts.Length; i++)
+            {
+                var next = current + "/" + parts[i];
+                if (!AssetDatabase.IsValidFolder(next))
+                {
+                    AssetDatabase.CreateFolder(current, parts[i]);
+                }
+
+                current = next;
+            }
+        }
+
+        private static string MakeSafeFileName(string name)
+        {
+            var invalid = Path.GetInvalidFileNameChars();
+            return string.Join("_", name.Split(invalid));
         }
 
         private static GameObject FindOrCreateChild(GameObject parent, string name)
@@ -118,13 +167,12 @@ namespace Vrcmst
                 submenuObj.transform.SetParent(parent, false);
 
                 var submenuItem = submenuObj.AddComponent<ModularAvatarMenuItem>();
-                submenuItem.InitSettings();
+                submenuItem.MenuSource = SubmenuSource.Children;
                 submenuItem.Control = new VRCExpressionsMenu.Control
                 {
                     type = VRCExpressionsMenu.Control.ControlType.SubMenu,
                     name = submenuName,
                 };
-                submenuItem.MenuSource = SubmenuSource.Children;
 
                 var installer = submenuObj.AddComponent<ModularAvatarMenuInstaller>();
                 installers.Add(installer);
@@ -151,7 +199,7 @@ namespace Vrcmst
             toggle.transform.SetParent(parent.transform, false);
 
             var objToggle = toggle.AddComponent<ModularAvatarObjectToggle>();
-            var path = RuntimeUtil.RelativePath(avatarRoot, target);
+            var path = AnimationUtility.CalculateTransformPath(target.transform, avatarRoot.transform);
             objToggle.Objects.Add(new ToggledObject
             {
                 Object = new AvatarObjectReference { referencePath = path },
@@ -159,7 +207,6 @@ namespace Vrcmst
             });
 
             var menuItem = toggle.AddComponent<ModularAvatarMenuItem>();
-            menuItem.InitSettings();
             menuItem.Control = new VRCExpressionsMenu.Control
             {
                 type = VRCExpressionsMenu.Control.ControlType.Toggle,
@@ -171,21 +218,14 @@ namespace Vrcmst
             return toggle.AddComponent<ModularAvatarMenuInstaller>();
         }
 
-        // MA本体のMenuInstallerEditor.OpenSelectMenuの"MenuNodesUnder"分岐と同じ手順:
-        // installTargetMenuはnullのままにし、categoryMenuRoot配下にModularAvatarMenuInstallTargetを作って紐付ける。
-        public static void WireInstallerToCategoryMenu(ModularAvatarMenuInstaller installer, GameObject categoryMenuRoot)
+        // 生成したインストーラーの設置先を、カテゴリ(M_<name>)の実体メニューアセットに直接設定する
+        public static void WireInstallerToCategoryMenu(ModularAvatarMenuInstaller installer, VRCExpressionsMenu menuAsset)
         {
-            if (installer == null || categoryMenuRoot == null) return;
+            if (installer == null || menuAsset == null) return;
 
             Undo.RecordObject(installer, "Set Install Target");
-            installer.installTargetMenu = null;
-
-            var child = new GameObject(installer.gameObject.name);
-            Undo.RegisterCreatedObjectUndo(child, "Set Install Target");
-            child.transform.SetParent(categoryMenuRoot.transform, false);
-
-            var targetComponent = child.AddComponent<ModularAvatarMenuInstallTarget>();
-            targetComponent.installer = installer;
+            installer.installTargetMenu = menuAsset;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(installer);
         }
 
         // 排他グループ化の対象候補: Toggleタイプ + ObjectToggleを持ち、EditorOnlyでないオブジェクト

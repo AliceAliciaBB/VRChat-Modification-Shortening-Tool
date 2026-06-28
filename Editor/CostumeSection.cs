@@ -49,8 +49,8 @@ namespace Vrcmst
         private void AddItem(GameObject avatarRoot, string categoryName, DistanceFadeSection fadeSection)
         {
             var oRoot = MenuSetupSection.GetObjectCategoryRoot(avatarRoot, categoryName);
-            var mRoot = MenuSetupSection.GetMenuCategoryRoot(avatarRoot, categoryName);
-            if (oRoot == null || mRoot == null)
+            var menuAsset = MenuSetupSection.GetMenuAsset(avatarRoot, categoryName);
+            if (oRoot == null || menuAsset == null)
             {
                 Debug.LogError("[VRCMST] カテゴリの構造(O_/M_)が見つかりません。②でカテゴリを作成し直してください。");
                 return;
@@ -67,7 +67,7 @@ namespace Vrcmst
                     var installers = ModularAvatarOps.CreateTogglesForSelection(avatarRoot, targets);
                     foreach (var installer in installers)
                     {
-                        ModularAvatarOps.WireInstallerToCategoryMenu(installer, mRoot);
+                        ModularAvatarOps.WireInstallerToCategoryMenu(installer, menuAsset);
                     }
 
                     // メニューの翻訳は手順書でも「検討のみ・実装は後回し」とされているため未対応(TODO)。
@@ -77,7 +77,7 @@ namespace Vrcmst
                     var hairInstallers = ModularAvatarOps.CreateTogglesForSelection(avatarRoot, new List<GameObject> { instance });
                     foreach (var installer in hairInstallers)
                     {
-                        ModularAvatarOps.WireInstallerToCategoryMenu(installer, mRoot);
+                        ModularAvatarOps.WireInstallerToCategoryMenu(installer, menuAsset);
                     }
 
                     // 既存の他の髪型との排他切り替えは④セクションで設定する。
