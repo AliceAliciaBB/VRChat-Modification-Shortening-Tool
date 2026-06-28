@@ -20,12 +20,14 @@ namespace Vrcmst
 
         private const string AutoApplyDistanceFadePrefKey = "Vrcmst.CostumeSection.AutoApplyDistanceFade";
         private const string ReplaceNameWithPrefabNamePrefKey = "Vrcmst.CostumeSection.ReplaceNameWithPrefabName";
+        private const string ApplyMeshSettingsInheritPrefKey = "Vrcmst.CostumeSection.ApplyMeshSettingsInherit";
 
         private GameObject _prefab;
         private ItemType _itemType = ItemType.Costume;
         private int _categoryIndex;
         private bool? _autoApplyDistanceFade;
         private bool? _replaceNameWithPrefabName;
+        private bool? _applyMeshSettingsInherit;
 
         // ④(髪型の排他グループ化)を表示すべきか、MainWindowから参照するための公開フラグ。
         public bool IsHairstyleTypeSelected => _itemType == ItemType.Hairstyle;
@@ -55,6 +57,19 @@ namespace Vrcmst
                 }
 
                 return _replaceNameWithPrefabName.Value;
+            }
+        }
+
+        private bool ApplyMeshSettingsInherit
+        {
+            get
+            {
+                if (_applyMeshSettingsInherit == null)
+                {
+                    _applyMeshSettingsInherit = EditorPrefs.GetBool(ApplyMeshSettingsInheritPrefKey, true);
+                }
+
+                return _applyMeshSettingsInherit.Value;
             }
         }
 
@@ -100,6 +115,15 @@ namespace Vrcmst
                 EditorPrefs.SetBool(ReplaceNameWithPrefabNamePrefKey, replaceNameWithPrefabName);
             }
 
+            var applyMeshSettingsInherit = EditorGUILayout.ToggleLeft(
+                "MA Mesh Settingsが\"Set\"の場合、\"SetOrInherit\"に変更する(親に設定があれば継承)",
+                ApplyMeshSettingsInherit);
+            if (applyMeshSettingsInherit != ApplyMeshSettingsInherit)
+            {
+                _applyMeshSettingsInherit = applyMeshSettingsInherit;
+                EditorPrefs.SetBool(ApplyMeshSettingsInheritPrefKey, applyMeshSettingsInherit);
+            }
+
             using (new EditorGUI.DisabledScope(_prefab == null))
             {
                 if (GUILayout.Button("追加"))
@@ -120,6 +144,12 @@ namespace Vrcmst
             }
 
             var instance = ModularAvatarOps.InstantiatePrefabUnder(_prefab, oRoot);
+
+            if (ApplyMeshSettingsInherit)
+            {
+                ModularAvatarOps.ApplySetOrInheritToMeshSettings(instance);
+            }
+
             if (AutoApplyDistanceFade)
             {
                 fadeSection.Apply(instance);

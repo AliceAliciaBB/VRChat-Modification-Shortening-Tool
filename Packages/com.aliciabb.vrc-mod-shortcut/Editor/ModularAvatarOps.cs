@@ -192,6 +192,36 @@ namespace Vrcmst
             SetupOutfit.SetupOutfitUI(outfitRoot);
         }
 
+        // 追加したアイテム配下のMA Mesh Settingsで、明示的に"Set"になっている項目を"SetOrInherit"に変更する。
+        // SetOrInheritは「親(アバター側)にMA Mesh Settingsの設定があれば継承し、無ければ自分の設定を使う」挙動のため、
+        // アバター側で既にProbe Anchor/Boundsを設定済みの場合に、追加した衣装側の設定で上書きされてしまうのを防げる。
+        public static void ApplySetOrInheritToMeshSettings(GameObject instance)
+        {
+            var meshSettingsList = instance.GetComponentsInChildren<ModularAvatarMeshSettings>(true);
+            foreach (var meshSettings in meshSettingsList)
+            {
+                Undo.RecordObject(meshSettings, "Adjust MA Mesh Settings Inherit Mode");
+                var changed = false;
+
+                if (meshSettings.InheritProbeAnchor == ModularAvatarMeshSettings.InheritMode.Set)
+                {
+                    meshSettings.InheritProbeAnchor = ModularAvatarMeshSettings.InheritMode.SetOrInherit;
+                    changed = true;
+                }
+
+                if (meshSettings.InheritBounds == ModularAvatarMeshSettings.InheritMode.Set)
+                {
+                    meshSettings.InheritBounds = ModularAvatarMeshSettings.InheritMode.SetOrInherit;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(meshSettings);
+                }
+            }
+        }
+
         // SetupOutfit実行後、衣装ルート直下からArmature(MergeArmatureが付与された/名前が"Armature"の)を除いた子を返す
         public static List<GameObject> GetNonArmatureChildren(GameObject outfitRoot)
         {
