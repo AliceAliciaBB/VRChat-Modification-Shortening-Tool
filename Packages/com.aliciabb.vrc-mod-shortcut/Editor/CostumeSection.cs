@@ -19,13 +19,13 @@ namespace Vrcmst
         private static readonly ItemType[] ItemTypeValues = { ItemType.Costume, ItemType.Hairstyle, ItemType.Other };
 
         private const string AutoApplyDistanceFadePrefKey = "Vrcmst.CostumeSection.AutoApplyDistanceFade";
-        private const string DuplicateBeforeAddingPrefKey = "Vrcmst.CostumeSection.DuplicateBeforeAdding";
+        private const string ReplaceNameWithPrefabNamePrefKey = "Vrcmst.CostumeSection.ReplaceNameWithPrefabName";
 
         private GameObject _prefab;
         private ItemType _itemType = ItemType.Costume;
         private int _categoryIndex;
         private bool? _autoApplyDistanceFade;
-        private bool? _duplicateBeforeAdding;
+        private bool? _replaceNameWithPrefabName;
 
         // ④(髪型の排他グループ化)を表示すべきか、MainWindowから参照するための公開フラグ。
         public bool IsHairstyleTypeSelected => _itemType == ItemType.Hairstyle;
@@ -45,21 +45,20 @@ namespace Vrcmst
             }
         }
 
-        private bool DuplicateBeforeAdding
+        private bool ReplaceNameWithPrefabName
         {
             get
             {
-                if (_duplicateBeforeAdding == null)
+                if (_replaceNameWithPrefabName == null)
                 {
-                    _duplicateBeforeAdding = EditorPrefs.GetBool(DuplicateBeforeAddingPrefKey, false);
+                    _replaceNameWithPrefabName = EditorPrefs.GetBool(ReplaceNameWithPrefabNamePrefKey, true);
                 }
 
-                return _duplicateBeforeAdding.Value;
+                return _replaceNameWithPrefabName.Value;
             }
         }
 
-        // avatarRootをコピーに差し替えた場合に、MainWindow側の対象アバター参照を更新するためのコールバック。
-        public void DrawGUI(GameObject avatarRoot, DistanceFadeSection fadeSection, System.Action<GameObject> onAvatarReplaced)
+        public void DrawGUI(GameObject avatarRoot, DistanceFadeSection fadeSection)
         {
             EditorGUILayout.LabelField("③ アイテム追加 (プレハブ → 格納先)", EditorStyles.boldLabel);
 
@@ -74,7 +73,12 @@ namespace Vrcmst
             _categoryIndex = EditorGUILayout.Popup("格納先", _categoryIndex, categories.ToArray());
             var categoryName = categories[_categoryIndex];
 
+            var previousPrefab = _prefab;
             _prefab = (GameObject)EditorGUILayout.ObjectField("プレハブ", _prefab, typeof(GameObject), false);
+            if (_prefab != null && _prefab != previousPrefab && avatarRoot != null && ReplaceNameWithPrefabName)
+            {
+                ModularAvatarOps.RenameDuplicateForPrefabAssignment(avatarRoot, _prefab.name);
+            }
 
             var itemTypeIndex = System.Array.IndexOf(ItemTypeValues, _itemType);
             itemTypeIndex = EditorGUILayout.Popup("メニュー作成タイプ", itemTypeIndex, ItemTypeLabels);
@@ -87,25 +91,25 @@ namespace Vrcmst
                 EditorPrefs.SetBool(AutoApplyDistanceFadePrefKey, autoApplyDistanceFade);
             }
 
-            var duplicateBeforeAdding = EditorGUILayout.ToggleLeft(
-                "アバターを複製してから追加する(複製先は元アバター名_プレハブ名、元アバターは非表示)",
-                DuplicateBeforeAdding);
-            if (duplicateBeforeAdding != DuplicateBeforeAdding)
+            var replaceNameWithPrefabName = EditorGUILayout.ToggleLeft(
+                $"複製直後の仮名(_{ModularAvatarOps.DuplicateNameMarker})をプレハブ名で置き換える",
+                ReplaceNameWithPrefabName);
+            if (replaceNameWithPrefabName != ReplaceNameWithPrefabName)
             {
-                _duplicateBeforeAdding = duplicateBeforeAdding;
-                EditorPrefs.SetBool(DuplicateBeforeAddingPrefKey, duplicateBeforeAdding);
+                _replaceNameWithPrefabName = replaceNameWithPrefabName;
+                EditorPrefs.SetBool(ReplaceNameWithPrefabNamePrefKey, replaceNameWithPrefabName);
             }
 
             using (new EditorGUI.DisabledScope(_prefab == null))
             {
                 if (GUILayout.Button("追加"))
                 {
-                    AddItem(avatarRoot, categoryName, fadeSection, onAvatarReplaced);
+                    AddItem(avatarRoot, categoryName, fadeSection);
                 }
             }
         }
 
-        private void AddItem(GameObject avatarRoot, string categoryName, DistanceFadeSection fadeSection, System.Action<GameObject> onAvatarReplaced)
+        private void AddItem(GameObject avatarRoot, string categoryName, DistanceFadeSection fadeSection)
         {
             var oRoot = MenuSetupSection.GetObjectCategoryRoot(avatarRoot, categoryName);
             var menuAsset = MenuSetupSection.GetMenuAsset(avatarRoot, categoryName);
@@ -113,14 +117,6 @@ namespace Vrcmst
             {
                 Debug.LogError("[VRCMST] 格納先の構造(O_/M_)が見つかりません。②で格納先を作成し直してください。");
                 return;
-            }
-
-            if (DuplicateBeforeAdding)
-            {
-                avatarRoot = ModularAvatarOps.DuplicateAvatarForModification(avatarRoot, _prefab.name);
-                onAvatarReplaced?.Invoke(avatarRoot);
-                oRoot = MenuSetupSection.GetObjectCategoryRoot(avatarRoot, categoryName);
-                menuAsset = MenuSetupSection.GetMenuAsset(avatarRoot, categoryName);
             }
 
             var instance = ModularAvatarOps.InstantiatePrefabUnder(_prefab, oRoot);

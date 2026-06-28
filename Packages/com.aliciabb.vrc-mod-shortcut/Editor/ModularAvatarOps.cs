@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using nadena.dev.modular_avatar.core;
 using nadena.dev.modular_avatar.core.editor;
 using UnityEditor;
@@ -19,6 +20,10 @@ namespace Vrcmst
     {
         private const string ArmatureObjectName = "Armature";
         private const string GeneratedMenuFolder = "Assets/VMST/GeneratedMenus";
+
+        // 「複製して改変する」で付与する仮名のマーカー。後でプレハブ名に置き換えられる。
+        public const string DuplicateNameMarker = "複製";
+        private static readonly Regex DuplicateSuffixPattern = new Regex(@"_" + DuplicateNameMarker + @"(\s\(\d+\))?$");
 
         public static GameObject EnsureMenuObjRoot(GameObject avatarRoot)
         {
@@ -140,7 +145,7 @@ namespace Vrcmst
             copy.transform.localPosition = original.transform.localPosition;
             copy.transform.localRotation = original.transform.localRotation;
             copy.transform.localScale = original.transform.localScale;
-            copy.name = original.name + "_" + nameSuffix;
+            copy.name = GameObjectUtility.GetUniqueNameForSibling(copy.transform.parent, original.name + "_" + nameSuffix);
 
             Undo.RecordObject(original, "Hide Original Avatar");
             original.SetActive(false);
@@ -154,6 +159,27 @@ namespace Vrcmst
             }
 
             return copy;
+        }
+
+        // 名前が「..._複製」(複製直後の仮名)に見えるかどうかを判定する。
+        // 「複製して改変する」を多重実行して"_複製_複製..."になるのを防ぐための確認に使う。
+        public static bool LooksLikeUnfinishedDuplicate(GameObject avatarRoot)
+        {
+            return avatarRoot != null && DuplicateSuffixPattern.IsMatch(avatarRoot.name);
+        }
+
+        // 「..._複製」の仮名をプレハブ名に置き換える。仮名のパターンに一致しない場合は何もしない
+        // (複製を経ていない元アバターを誤ってリネームしないため)。
+        public static void RenameDuplicateForPrefabAssignment(GameObject avatarRoot, string prefabName)
+        {
+            var match = DuplicateSuffixPattern.Match(avatarRoot.name);
+            if (!match.Success) return;
+
+            var baseName = avatarRoot.name.Substring(0, match.Index);
+            var desiredName = GameObjectUtility.GetUniqueNameForSibling(avatarRoot.transform.parent, baseName + "_" + prefabName);
+
+            Undo.RecordObject(avatarRoot, "Rename Avatar");
+            avatarRoot.name = desiredName;
         }
 
         public static void RunSetupOutfit(GameObject outfitRoot)

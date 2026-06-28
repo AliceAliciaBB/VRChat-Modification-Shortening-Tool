@@ -70,10 +70,7 @@ namespace Vrcmst
                 _menuSetupSection.DrawGUI(avatarRoot);
 
                 DrawSeparator();
-                _costumeSection.DrawGUI(avatarRoot, _distanceFadeSection, newAvatarRoot =>
-                {
-                    _avatar = newAvatarRoot.GetComponent<VRCAvatarDescriptor>();
-                });
+                _costumeSection.DrawGUI(avatarRoot, _distanceFadeSection);
 
                 if (_costumeSection.IsHairstyleTypeSelected)
                 {
@@ -95,17 +92,52 @@ namespace Vrcmst
 
         private void DrawAvatarField()
         {
+            DrawQuickActions();
+
             EditorGUILayout.LabelField("対象アバター", EditorStyles.boldLabel);
             _avatar = (VRCAvatarDescriptor)EditorGUILayout.ObjectField("Avatar", _avatar, typeof(VRCAvatarDescriptor), true);
+        }
 
-            if (_avatar == null && Selection.activeGameObject != null)
+        // Hierarchyで選択中のアバターを、そのまま使うか複製してから使うかを常に選べるようにする入口。
+        private void DrawQuickActions()
+        {
+            var fromSelection = Selection.activeGameObject != null
+                ? Selection.activeGameObject.GetComponentInParent<VRCAvatarDescriptor>()
+                : null;
+
+            using (new EditorGUI.DisabledScope(fromSelection == null))
             {
-                var fromSelection = Selection.activeGameObject.GetComponentInParent<VRCAvatarDescriptor>();
-                if (fromSelection != null && GUILayout.Button($"選択中のオブジェクトから自動設定 ({fromSelection.gameObject.name})"))
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    _avatar = fromSelection;
+                    if (GUILayout.Button("現在選択中のアバターを改変する"))
+                    {
+                        _avatar = fromSelection;
+                    }
+
+                    if (GUILayout.Button("複製して改変する"))
+                    {
+                        DuplicateSelectionAndSetAsTarget(fromSelection.gameObject);
+                    }
                 }
             }
+
+            EditorGUILayout.Space();
+        }
+
+        private void DuplicateSelectionAndSetAsTarget(GameObject source)
+        {
+            if (ModularAvatarOps.LooksLikeUnfinishedDuplicate(source))
+            {
+                var proceed = EditorUtility.DisplayDialog(
+                    "複製の確認",
+                    $"「{source.name}」は既に複製のようです。さらに複製しますか？",
+                    "複製する",
+                    "キャンセル");
+                if (!proceed) return;
+            }
+
+            var copy = ModularAvatarOps.DuplicateAvatarForModification(source, ModularAvatarOps.DuplicateNameMarker);
+            _avatar = copy.GetComponent<VRCAvatarDescriptor>();
         }
 
         private static void DrawSeparator()
