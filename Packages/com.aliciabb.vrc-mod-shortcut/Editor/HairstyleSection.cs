@@ -35,7 +35,7 @@ namespace Vrcmst
 
             GameObject scopeRoot;
             string defaultParamName;
-            using (new EditorGUILayout.VerticalScope("box"))
+            using (new EditorGUILayout.VerticalScope(VrcmstStyles.Box))
             {
                 var scopeIndex = System.Array.IndexOf(ScopeValues, _scope);
                 scopeIndex = EditorGUILayout.Popup("検索範囲", scopeIndex, ScopeLabels);
@@ -73,7 +73,7 @@ namespace Vrcmst
 
             EditorGUILayout.Space();
 
-            using (new EditorGUILayout.VerticalScope("box"))
+            using (new EditorGUILayout.VerticalScope(VrcmstStyles.Box))
             {
                 EditorGUILayout.LabelField("排他グループ化の対象", EditorStyles.miniBoldLabel);
 
@@ -82,7 +82,7 @@ namespace Vrcmst
                 foreach (var candidate in candidates)
                 {
                     var isSelected = _selected.Contains(candidate);
-                    var newValue = EditorGUILayout.ToggleLeft(candidate.name, isSelected);
+                    var newValue = VrcmstStyles.WrappedToggleLeft(candidate.name, isSelected);
                     if (newValue && !isSelected) _selected.Add(candidate);
                     else if (!newValue && isSelected) _selected.Remove(candidate);
                 }

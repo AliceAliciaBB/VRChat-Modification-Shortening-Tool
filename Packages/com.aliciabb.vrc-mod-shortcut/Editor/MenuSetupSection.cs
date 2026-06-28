@@ -15,7 +15,7 @@ namespace Vrcmst
         {
             EditorGUILayout.LabelField("① メニュー初期セットアップ", EditorStyles.boldLabel);
 
-            using (new EditorGUILayout.VerticalScope("box"))
+            using (new EditorGUILayout.VerticalScope(VrcmstStyles.Box))
             {
                 if (GetMenuObjRoot(avatarRoot) == null)
                 {
@@ -29,16 +29,16 @@ namespace Vrcmst
                 }
                 else
                 {
-                    EditorGUILayout.LabelField("M_menuObj は作成済みです。", EditorStyles.miniLabel);
+                    EditorGUILayout.LabelField("M_menuObj は作成済みです。", VrcmstStyles.WrappedMiniLabel);
                 }
             }
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("② 格納先作成 (O_<name> / M_<name>)", EditorStyles.boldLabel);
 
-            using (new EditorGUILayout.VerticalScope("box"))
+            using (new EditorGUILayout.VerticalScope(VrcmstStyles.Box))
             {
-                EditorGUILayout.LabelField("例) 衣装, 髪型, アクセサリ, ギミック など", EditorStyles.miniLabel);
+                EditorGUILayout.LabelField("例) 衣装, 髪型, アクセサリ, ギミック など", VrcmstStyles.WrappedMiniLabel);
 
                 _categoryName = EditorGUILayout.TextField("格納先名", _categoryName);
 

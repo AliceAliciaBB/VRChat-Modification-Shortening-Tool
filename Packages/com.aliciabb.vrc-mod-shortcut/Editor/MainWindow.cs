@@ -24,7 +24,7 @@ namespace Vrcmst
                 var window = GetWindow<MainWindow>("改変ショートカット");
                 Debug.Log($"[VRCMST] GetWindow完了: window={(window != null ? window.ToString() : "null")}, instanceID={(window != null ? window.GetInstanceID() : 0)}");
 
-                window.minSize = new Vector2(420, 500);
+                window.minSize = new Vector2(VrcmstStyles.MinContentWidth, 500);
                 // 以前のレイアウト保存が壊れている(幅/高さが極端に小さい)場合は既定サイズに戻す。
                 if (window.position.width < 100 || window.position.height < 100)
                 {
@@ -60,28 +60,31 @@ namespace Vrcmst
         {
             try
             {
-                DrawAvatarField();
-
-                var avatarRoot = _avatar != null ? _avatar.gameObject : null;
-
-                _scroll = EditorGUILayout.BeginScrollView(_scroll);
-
-                EditorGUILayout.Space();
-                _menuSetupSection.DrawGUI(avatarRoot);
-
-                DrawSeparator();
-                _costumeSection.DrawGUI(avatarRoot, _distanceFadeSection);
-
-                if (_costumeSection.IsHairstyleTypeSelected)
+                using (new EditorGUILayout.VerticalScope(VrcmstStyles.WindowPadding))
                 {
+                    DrawAvatarField();
+
+                    var avatarRoot = _avatar != null ? _avatar.gameObject : null;
+
+                    _scroll = EditorGUILayout.BeginScrollView(_scroll);
+
+                    EditorGUILayout.Space();
+                    _menuSetupSection.DrawGUI(avatarRoot);
+
                     DrawSeparator();
-                    _hairstyleSection.DrawGUI(avatarRoot);
+                    _costumeSection.DrawGUI(avatarRoot, _distanceFadeSection);
+
+                    if (_costumeSection.IsHairstyleTypeSelected)
+                    {
+                        DrawSeparator();
+                        _hairstyleSection.DrawGUI(avatarRoot);
+                    }
+
+                    DrawSeparator();
+                    _distanceFadeSection.DrawGUI();
+
+                    EditorGUILayout.EndScrollView();
                 }
-
-                DrawSeparator();
-                _distanceFadeSection.DrawGUI();
-
-                EditorGUILayout.EndScrollView();
             }
             catch (System.Exception e)
             {

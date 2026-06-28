@@ -67,37 +67,6 @@ namespace Vrcmst
             }
         }
 
-        private GUIStyle _wrappedLabelStyle;
-
-        // 説明文がWindow幅で切れずに折り返されるようにするスタイル。
-        // EditorStyles系はGUI描画中以外でのアクセスを避けるため、フィールド初期化子ではなく遅延生成する。
-        private GUIStyle WrappedLabelStyle
-        {
-            get
-            {
-                if (_wrappedLabelStyle == null)
-                {
-                    _wrappedLabelStyle = new GUIStyle(EditorStyles.label)
-                    {
-                        wordWrap = true,
-                        margin = new RectOffset(2, 2, 3, 3),
-                    };
-                }
-
-                return _wrappedLabelStyle;
-            }
-        }
-
-        // EditorGUILayout.ToggleLeftはwordWrap指定のGUIStyleを渡しても折り返し後の高さを
-        // 正しくレイアウトに反映しないため(囲っているboxの高さが不足し文字が切れる)、
-        // スタイルを渡せるGetRectオーバーロードでUnity自身に高さとmargin込みのレイアウトを計算させる。
-        private bool WrappedToggleLeft(string label, bool value)
-        {
-            var content = new GUIContent(label);
-            var rect = GUILayoutUtility.GetRect(content, WrappedLabelStyle, GUILayout.ExpandWidth(true));
-            return EditorGUI.ToggleLeft(rect, content, value, WrappedLabelStyle);
-        }
-
         public void DrawGUI(GameObject avatarRoot, DistanceFadeSection fadeSection)
         {
             EditorGUILayout.LabelField("③ アイテム追加 (プレハブ → 格納先)", EditorStyles.boldLabel);
@@ -110,7 +79,7 @@ namespace Vrcmst
             }
 
             string categoryName;
-            using (new EditorGUILayout.VerticalScope("box"))
+            using (new EditorGUILayout.VerticalScope(VrcmstStyles.Box))
             {
                 _categoryIndex = Mathf.Clamp(_categoryIndex, 0, categories.Count - 1);
                 _categoryIndex = EditorGUILayout.Popup("格納先", _categoryIndex, categories.ToArray());
@@ -130,11 +99,11 @@ namespace Vrcmst
 
             EditorGUILayout.Space();
 
-            using (new EditorGUILayout.VerticalScope("box"))
+            using (new EditorGUILayout.VerticalScope(VrcmstStyles.Box))
             {
                 EditorGUILayout.LabelField("追加オプション", EditorStyles.miniBoldLabel);
 
-                var replaceNameWithPrefabName = WrappedToggleLeft(
+                var replaceNameWithPrefabName = VrcmstStyles.WrappedToggleLeft(
                     $"プレハブ割り当て時にアバター名へ反映する(仮名_{ModularAvatarOps.DuplicateNameMarker}は置き換え、それ以外は末尾に追加)",
                     ReplaceNameWithPrefabName);
                 if (replaceNameWithPrefabName != ReplaceNameWithPrefabName)
@@ -145,11 +114,11 @@ namespace Vrcmst
 
                 if (ReplaceNameWithPrefabName && _prefab != null)
                 {
-                    EditorGUILayout.LabelField("変更後アバター名(予測・編集可)", WrappedLabelStyle);
+                    EditorGUILayout.LabelField("変更後アバター名(予測・編集可)", VrcmstStyles.WrappedLabel);
                     _predictedAvatarName = EditorGUILayout.TextField(_predictedAvatarName);
                 }
 
-                var showTranslationSection = WrappedToggleLeft(
+                var showTranslationSection = VrcmstStyles.WrappedToggleLeft(
                     "衣装追加後にメニュー名の翻訳区画を表示する(自動翻訳/手動編集してから適用)",
                     ShowTranslationSection);
                 if (showTranslationSection != ShowTranslationSection)
@@ -180,11 +149,11 @@ namespace Vrcmst
         // 1行=1項目の複数行テキストエリアにして外部の翻訳サービスへのコピペを容易にする。
         private void DrawTranslationSection()
         {
-            using (new EditorGUILayout.VerticalScope("box"))
+            using (new EditorGUILayout.VerticalScope(VrcmstStyles.Box))
             {
                 EditorGUILayout.LabelField("メニュー名の翻訳", EditorStyles.miniBoldLabel);
 
-                EditorGUILayout.LabelField("元の名前(参考・コピー用)", WrappedLabelStyle);
+                EditorGUILayout.LabelField("元の名前(参考・コピー用)", VrcmstStyles.WrappedLabel);
                 var originalNamesText = string.Join("\n", _pendingTranslationItems.Select(item => item != null ? item.Control.name : ""));
                 using (new EditorGUI.DisabledScope(true))
                 {
@@ -196,7 +165,7 @@ namespace Vrcmst
                 EditorGUILayout.LabelField(
                     "各行が上の「元の名前」と1対1で対応します。コピーして外部の翻訳サービスに貼り付け、" +
                     "結果をここに貼り付けてから「適用」を押してください。「自動翻訳」でこのツール内から一括翻訳することもできます。",
-                    WrappedLabelStyle);
+                    VrcmstStyles.WrappedLabel);
 
                 _pendingTranslationText = EditorGUILayout.TextArea(
                     _pendingTranslationText,

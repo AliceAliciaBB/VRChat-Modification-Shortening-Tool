@@ -18,7 +18,6 @@ namespace Vrcmst
 
         private bool? _autoApplyOnAdd;
         private bool? _applyMeshSettingsInheritOnAdd;
-        private GUIStyle _wrappedLabelStyle;
 
         // ③アイテム追加時に自動的に距離フェードを一括適用するかどうか。
         // 普段の作業中は変更頻度が低いため、距離フェードセクション側にまとめて置く。
@@ -49,47 +48,20 @@ namespace Vrcmst
             }
         }
 
-        private GUIStyle WrappedLabelStyle
-        {
-            get
-            {
-                if (_wrappedLabelStyle == null)
-                {
-                    _wrappedLabelStyle = new GUIStyle(EditorStyles.label)
-                    {
-                        wordWrap = true,
-                        margin = new RectOffset(2, 2, 3, 3),
-                    };
-                }
-
-                return _wrappedLabelStyle;
-            }
-        }
-
-        // EditorGUILayout.ToggleLeftはwordWrap指定のGUIStyleを渡しても折り返し後の高さを
-        // 正しくレイアウトに反映しないため、スタイルを渡せるGetRectオーバーロードで
-        // Unity自身に高さとmargin込みのレイアウトを計算させる。
-        private bool WrappedToggleLeft(string label, bool value)
-        {
-            var content = new GUIContent(label);
-            var rect = GUILayoutUtility.GetRect(content, WrappedLabelStyle, GUILayout.ExpandWidth(true));
-            return EditorGUI.ToggleLeft(rect, content, value, WrappedLabelStyle);
-        }
-
         public void DrawGUI()
         {
-            using (new EditorGUILayout.VerticalScope("box"))
+            using (new EditorGUILayout.VerticalScope(VrcmstStyles.Box))
             {
                 EditorGUILayout.LabelField("⑤ 詳細設定(変更頻度が低い項目)", EditorStyles.miniBoldLabel);
 
-                var autoApplyOnAdd = WrappedToggleLeft("追加時に距離フェードを一括適用", AutoApplyOnAdd);
+                var autoApplyOnAdd = VrcmstStyles.WrappedToggleLeft("追加時に距離フェードを一括適用", AutoApplyOnAdd);
                 if (autoApplyOnAdd != AutoApplyOnAdd)
                 {
                     _autoApplyOnAdd = autoApplyOnAdd;
                     EditorPrefs.SetBool(AutoApplyOnAddPrefKey, autoApplyOnAdd);
                 }
 
-                var applyMeshSettingsInheritOnAdd = WrappedToggleLeft(
+                var applyMeshSettingsInheritOnAdd = VrcmstStyles.WrappedToggleLeft(
                     "MA Mesh Settingsが設定の場合、親に設定があれば継承に変更する",
                     ApplyMeshSettingsInheritOnAdd);
                 if (applyMeshSettingsInheritOnAdd != ApplyMeshSettingsInheritOnAdd)
@@ -101,9 +73,9 @@ namespace Vrcmst
 
             EditorGUILayout.Space();
 
-            EditorGUILayout.LabelField("⑤ 距離フェード一括適用 (lilToon)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("⑥ 距離フェード一括適用 (lilToon)", EditorStyles.boldLabel);
 
-            using (new EditorGUILayout.VerticalScope("box"))
+            using (new EditorGUILayout.VerticalScope(VrcmstStyles.Box))
             {
                 FadeColor = EditorGUILayout.ColorField("フェードカラー", FadeColor);
                 FadeStart = EditorGUILayout.FloatField("フェード開始距離", FadeStart);
