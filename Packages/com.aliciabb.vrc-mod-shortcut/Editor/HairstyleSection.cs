@@ -15,6 +15,9 @@ namespace Vrcmst
             WholeAvatar,
         }
 
+        private static readonly string[] ScopeLabels = { "カテゴリ内", "アバター全体" };
+        private static readonly Scope[] ScopeValues = { Scope.Category, Scope.WholeAvatar };
+
         private Scope _scope = Scope.Category;
         private int _categoryIndex;
         private string _parameterName = "";
@@ -30,7 +33,9 @@ namespace Vrcmst
                 return;
             }
 
-            _scope = (Scope)EditorGUILayout.EnumPopup("検索範囲", _scope);
+            var scopeIndex = System.Array.IndexOf(ScopeValues, _scope);
+            scopeIndex = EditorGUILayout.Popup("検索範囲", scopeIndex, ScopeLabels);
+            _scope = ScopeValues[scopeIndex];
 
             var scopeRoot = avatarRoot;
             var defaultParamName = "Hairstyle";

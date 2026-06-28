@@ -15,9 +15,33 @@ namespace Vrcmst
             Other,
         }
 
+        private static readonly string[] ItemTypeLabels = { "衣装", "髪型", "その他" };
+        private static readonly ItemType[] ItemTypeValues = { ItemType.Costume, ItemType.Hairstyle, ItemType.Other };
+
+        private const string AutoApplyDistanceFadePrefKey = "Vrcmst.CostumeSection.AutoApplyDistanceFade";
+
         private GameObject _prefab;
         private ItemType _itemType = ItemType.Costume;
         private int _categoryIndex;
+        private bool? _autoApplyDistanceFade;
+
+        // ④(髪型の排他グループ化)を表示すべきか、MainWindowから参照するための公開フラグ。
+        public bool IsHairstyleTypeSelected => _itemType == ItemType.Hairstyle;
+
+        // EditorPrefsはScriptableObject(MainWindow)のフィールド初期化子から呼ぶと例外になるため、
+        // 実際にGUIが描画される時点まで読み込みを遅延させる。
+        private bool AutoApplyDistanceFade
+        {
+            get
+            {
+                if (_autoApplyDistanceFade == null)
+                {
+                    _autoApplyDistanceFade = EditorPrefs.GetBool(AutoApplyDistanceFadePrefKey, true);
+                }
+
+                return _autoApplyDistanceFade.Value;
+            }
+        }
 
         public void DrawGUI(GameObject avatarRoot, DistanceFadeSection fadeSection)
         {
@@ -35,7 +59,17 @@ namespace Vrcmst
             var categoryName = categories[_categoryIndex];
 
             _prefab = (GameObject)EditorGUILayout.ObjectField("プレハブ", _prefab, typeof(GameObject), false);
-            _itemType = (ItemType)EditorGUILayout.EnumPopup("メニュー作成タイプ", _itemType);
+
+            var itemTypeIndex = System.Array.IndexOf(ItemTypeValues, _itemType);
+            itemTypeIndex = EditorGUILayout.Popup("メニュー作成タイプ", itemTypeIndex, ItemTypeLabels);
+            _itemType = ItemTypeValues[itemTypeIndex];
+
+            var autoApplyDistanceFade = EditorGUILayout.ToggleLeft("追加時に距離フェードを一括適用", AutoApplyDistanceFade);
+            if (autoApplyDistanceFade != AutoApplyDistanceFade)
+            {
+                _autoApplyDistanceFade = autoApplyDistanceFade;
+                EditorPrefs.SetBool(AutoApplyDistanceFadePrefKey, autoApplyDistanceFade);
+            }
 
             using (new EditorGUI.DisabledScope(_prefab == null))
             {
@@ -57,7 +91,10 @@ namespace Vrcmst
             }
 
             var instance = ModularAvatarOps.InstantiatePrefabUnder(_prefab, oRoot);
-            fadeSection.Apply(instance);
+            if (AutoApplyDistanceFade)
+            {
+                fadeSection.Apply(instance);
+            }
 
             switch (_itemType)
             {

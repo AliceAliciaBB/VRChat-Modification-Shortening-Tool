@@ -35,8 +35,11 @@ namespace Vrcmst
             DrawSeparator();
             _costumeSection.DrawGUI(avatarRoot, _distanceFadeSection);
 
-            DrawSeparator();
-            _hairstyleSection.DrawGUI(avatarRoot);
+            if (_costumeSection.IsHairstyleTypeSelected)
+            {
+                DrawSeparator();
+                _hairstyleSection.DrawGUI(avatarRoot);
+            }
 
             DrawSeparator();
             _distanceFadeSection.DrawGUI();
