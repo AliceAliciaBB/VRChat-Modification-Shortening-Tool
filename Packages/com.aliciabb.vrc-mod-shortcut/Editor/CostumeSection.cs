@@ -110,7 +110,7 @@ namespace Vrcmst
                     _wrappedLabelStyle = new GUIStyle(EditorStyles.label)
                     {
                         wordWrap = true,
-                        margin = new RectOffset(2, 2, 4, 4),
+                        margin = new RectOffset(2, 2, 3, 3),
                     };
                 }
 
@@ -120,13 +120,11 @@ namespace Vrcmst
 
         // EditorGUILayout.ToggleLeftはwordWrap指定のGUIStyleを渡しても折り返し後の高さを
         // 正しくレイアウトに反映しないため(囲っているboxの高さが不足し文字が切れる)、
-        // CalcHeightで必要な高さを計算したRectを自前で確保してから描画する。
+        // スタイルを渡せるGetRectオーバーロードでUnity自身に高さとmargin込みのレイアウトを計算させる。
         private bool WrappedToggleLeft(string label, bool value)
         {
             var content = new GUIContent(label);
-            var width = Mathf.Max(EditorGUIUtility.currentViewWidth - 60f, 50f);
-            var height = WrappedLabelStyle.CalcHeight(content, width);
-            var rect = GUILayoutUtility.GetRect(0, height, GUILayout.ExpandWidth(true));
+            var rect = GUILayoutUtility.GetRect(content, WrappedLabelStyle, GUILayout.ExpandWidth(true));
             return EditorGUI.ToggleLeft(rect, content, value, WrappedLabelStyle);
         }
 
@@ -334,10 +332,17 @@ namespace Vrcmst
                 control.name = newNames[i];
                 item.Control = control;
                 PrefabUtility.RecordPrefabInstancePropertyModifications(item);
+
+                // Control.name(VRC Expression Menu上の表示名)とGameObject自体の名前(Hierarchy上の名前)は
+                // 別々のフィールドなので、Hierarchy上でも変化が分かるようGameObject名も合わせて変更する。
+                Undo.RecordObject(item.gameObject, "Translate Menu Item Name");
+                item.gameObject.name = newNames[i];
             }
 
             _pendingTranslationItems.Clear();
             _pendingTranslationText = "";
+
+            Debug.Log($"[VRCMST] メニュー名の翻訳を{newNames.Length}件適用しました。");
         }
 
         private void AddItem(GameObject avatarRoot, string categoryName, DistanceFadeSection fadeSection)
