@@ -15,31 +15,42 @@ namespace Vrcmst
         {
             EditorGUILayout.LabelField("① メニュー初期セットアップ", EditorStyles.boldLabel);
 
-            if (GetMenuObjRoot(avatarRoot) == null)
+            using (new EditorGUILayout.VerticalScope("box"))
             {
-                using (new EditorGUI.DisabledScope(avatarRoot == null))
+                if (GetMenuObjRoot(avatarRoot) == null)
                 {
-                    if (GUILayout.Button("M_menuObj を用意"))
+                    using (new EditorGUI.DisabledScope(avatarRoot == null))
                     {
-                        ModularAvatarOps.EnsureMenuObjRoot(avatarRoot);
+                        if (GUILayout.Button("M_menuObj を用意"))
+                        {
+                            ModularAvatarOps.EnsureMenuObjRoot(avatarRoot);
+                        }
                     }
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("M_menuObj は作成済みです。", EditorStyles.miniLabel);
                 }
             }
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("② 格納先作成 (O_<name> / M_<name>)", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("例) 衣装, 髪型, アクセサリ, ギミック など", EditorStyles.miniLabel);
 
-            _categoryName = EditorGUILayout.TextField("格納先名", _categoryName);
-
-            using (new EditorGUI.DisabledScope(avatarRoot == null || string.IsNullOrWhiteSpace(_categoryName)))
+            using (new EditorGUILayout.VerticalScope("box"))
             {
-                if (GUILayout.Button("格納先を作成"))
+                EditorGUILayout.LabelField("例) 衣装, 髪型, アクセサリ, ギミック など", EditorStyles.miniLabel);
+
+                _categoryName = EditorGUILayout.TextField("格納先名", _categoryName);
+
+                using (new EditorGUI.DisabledScope(avatarRoot == null || string.IsNullOrWhiteSpace(_categoryName)))
                 {
-                    var menuObjRoot = ModularAvatarOps.EnsureMenuObjRoot(avatarRoot);
-                    ModularAvatarOps.EnsureObjectCategoryRoot(avatarRoot, _categoryName);
-                    ModularAvatarOps.EnsureMenuCategoryRoot(avatarRoot, menuObjRoot, _categoryName);
-                    _categoryName = "";
+                    if (GUILayout.Button("格納先を作成"))
+                    {
+                        var menuObjRoot = ModularAvatarOps.EnsureMenuObjRoot(avatarRoot);
+                        ModularAvatarOps.EnsureObjectCategoryRoot(avatarRoot, _categoryName);
+                        ModularAvatarOps.EnsureMenuCategoryRoot(avatarRoot, menuObjRoot, _categoryName);
+                        _categoryName = "";
+                    }
                 }
             }
         }

@@ -33,27 +33,32 @@ namespace Vrcmst
                 return;
             }
 
-            var scopeIndex = System.Array.IndexOf(ScopeValues, _scope);
-            scopeIndex = EditorGUILayout.Popup("検索範囲", scopeIndex, ScopeLabels);
-            _scope = ScopeValues[scopeIndex];
-
-            var scopeRoot = avatarRoot;
-            var defaultParamName = "Hairstyle";
-
-            if (_scope == Scope.Category)
+            GameObject scopeRoot;
+            string defaultParamName;
+            using (new EditorGUILayout.VerticalScope("box"))
             {
-                var categories = MenuSetupSection.GetCategoryNames(avatarRoot);
-                if (categories.Count == 0)
-                {
-                    EditorGUILayout.HelpBox("先に②で格納先を作成してください。", MessageType.Info);
-                    return;
-                }
+                var scopeIndex = System.Array.IndexOf(ScopeValues, _scope);
+                scopeIndex = EditorGUILayout.Popup("検索範囲", scopeIndex, ScopeLabels);
+                _scope = ScopeValues[scopeIndex];
 
-                _categoryIndex = Mathf.Clamp(_categoryIndex, 0, categories.Count - 1);
-                _categoryIndex = EditorGUILayout.Popup("格納先", _categoryIndex, categories.ToArray());
-                var categoryName = categories[_categoryIndex];
-                scopeRoot = MenuSetupSection.GetObjectCategoryRoot(avatarRoot, categoryName);
-                defaultParamName = categoryName;
+                scopeRoot = avatarRoot;
+                defaultParamName = "Hairstyle";
+
+                if (_scope == Scope.Category)
+                {
+                    var categories = MenuSetupSection.GetCategoryNames(avatarRoot);
+                    if (categories.Count == 0)
+                    {
+                        EditorGUILayout.HelpBox("先に②で格納先を作成してください。", MessageType.Info);
+                        return;
+                    }
+
+                    _categoryIndex = Mathf.Clamp(_categoryIndex, 0, categories.Count - 1);
+                    _categoryIndex = EditorGUILayout.Popup("格納先", _categoryIndex, categories.ToArray());
+                    var categoryName = categories[_categoryIndex];
+                    scopeRoot = MenuSetupSection.GetObjectCategoryRoot(avatarRoot, categoryName);
+                    defaultParamName = categoryName;
+                }
             }
 
             if (scopeRoot == null) return;
@@ -66,26 +71,35 @@ namespace Vrcmst
                 return;
             }
 
-            _selected.RemoveWhere(go => go == null || !candidates.Contains(go));
+            EditorGUILayout.Space();
 
-            foreach (var candidate in candidates)
+            using (new EditorGUILayout.VerticalScope("box"))
             {
-                var isSelected = _selected.Contains(candidate);
-                var newValue = EditorGUILayout.ToggleLeft(candidate.name, isSelected);
-                if (newValue && !isSelected) _selected.Add(candidate);
-                else if (!newValue && isSelected) _selected.Remove(candidate);
+                EditorGUILayout.LabelField("排他グループ化の対象", EditorStyles.miniBoldLabel);
+
+                _selected.RemoveWhere(go => go == null || !candidates.Contains(go));
+
+                foreach (var candidate in candidates)
+                {
+                    var isSelected = _selected.Contains(candidate);
+                    var newValue = EditorGUILayout.ToggleLeft(candidate.name, isSelected);
+                    if (newValue && !isSelected) _selected.Add(candidate);
+                    else if (!newValue && isSelected) _selected.Remove(candidate);
+                }
+
+                if (string.IsNullOrEmpty(_parameterName))
+                {
+                    _parameterName = defaultParamName;
+                }
+
+                _parameterName = EditorGUILayout.TextField("共有パラメータ名", _parameterName);
             }
 
-            if (string.IsNullOrEmpty(_parameterName))
-            {
-                _parameterName = defaultParamName;
-            }
-
-            _parameterName = EditorGUILayout.TextField("共有パラメータ名", _parameterName);
+            EditorGUILayout.Space();
 
             using (new EditorGUI.DisabledScope(_selected.Count < 2 || string.IsNullOrWhiteSpace(_parameterName)))
             {
-                if (GUILayout.Button("排他グループとして設定"))
+                if (GUILayout.Button("排他グループとして設定", GUILayout.Height(28)))
                 {
                     ModularAvatarOps.SetExclusiveGroup(new List<GameObject>(_selected), _parameterName);
                     _selected.Clear();

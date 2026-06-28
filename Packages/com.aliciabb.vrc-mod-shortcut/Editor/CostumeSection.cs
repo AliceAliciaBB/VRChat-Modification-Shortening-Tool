@@ -102,63 +102,76 @@ namespace Vrcmst
                 return;
             }
 
-            _categoryIndex = Mathf.Clamp(_categoryIndex, 0, categories.Count - 1);
-            _categoryIndex = EditorGUILayout.Popup("格納先", _categoryIndex, categories.ToArray());
-            var categoryName = categories[_categoryIndex];
-
-            var previousPrefab = _prefab;
-            _prefab = (GameObject)EditorGUILayout.ObjectField("プレハブ", _prefab, typeof(GameObject), false);
-            if (_prefab != null && _prefab != previousPrefab && avatarRoot != null && ReplaceNameWithPrefabName)
+            string categoryName;
+            using (new EditorGUILayout.VerticalScope("box"))
             {
-                _predictedAvatarName = ModularAvatarOps.PredictAvatarNameForPrefab(avatarRoot, _prefab.name);
-            }
+                _categoryIndex = Mathf.Clamp(_categoryIndex, 0, categories.Count - 1);
+                _categoryIndex = EditorGUILayout.Popup("格納先", _categoryIndex, categories.ToArray());
+                categoryName = categories[_categoryIndex];
 
-            var itemTypeIndex = System.Array.IndexOf(ItemTypeValues, _itemType);
-            itemTypeIndex = EditorGUILayout.Popup("メニュー作成タイプ", itemTypeIndex, ItemTypeLabels);
-            _itemType = ItemTypeValues[itemTypeIndex];
-
-            var replaceNameWithPrefabName = EditorGUILayout.ToggleLeft(
-                $"プレハブ割り当て時にアバター名へ反映する(仮名_{ModularAvatarOps.DuplicateNameMarker}は置き換え、それ以外は末尾に追加)",
-                ReplaceNameWithPrefabName,
-                WrappedLabelStyle);
-            if (replaceNameWithPrefabName != ReplaceNameWithPrefabName)
-            {
-                _replaceNameWithPrefabName = replaceNameWithPrefabName;
-                EditorPrefs.SetBool(ReplaceNameWithPrefabNamePrefKey, replaceNameWithPrefabName);
-            }
-
-            if (ReplaceNameWithPrefabName && _prefab != null)
-            {
-                EditorGUILayout.LabelField("変更後アバター名(予測・編集可)", WrappedLabelStyle);
-                _predictedAvatarName = EditorGUILayout.TextField(_predictedAvatarName);
-            }
-
-            using (new EditorGUI.DisabledScope(_prefab == null))
-            {
-                if (GUILayout.Button("追加"))
+                var previousPrefab = _prefab;
+                _prefab = (GameObject)EditorGUILayout.ObjectField("プレハブ", _prefab, typeof(GameObject), false);
+                if (_prefab != null && _prefab != previousPrefab && avatarRoot != null && ReplaceNameWithPrefabName)
                 {
-                    AddItem(avatarRoot, categoryName, fadeSection);
+                    _predictedAvatarName = ModularAvatarOps.PredictAvatarNameForPrefab(avatarRoot, _prefab.name);
+                }
+
+                var itemTypeIndex = System.Array.IndexOf(ItemTypeValues, _itemType);
+                itemTypeIndex = EditorGUILayout.Popup("メニュー作成タイプ", itemTypeIndex, ItemTypeLabels);
+                _itemType = ItemTypeValues[itemTypeIndex];
+            }
+
+            EditorGUILayout.Space();
+
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                EditorGUILayout.LabelField("追加オプション", EditorStyles.miniBoldLabel);
+
+                var replaceNameWithPrefabName = EditorGUILayout.ToggleLeft(
+                    $"プレハブ割り当て時にアバター名へ反映する(仮名_{ModularAvatarOps.DuplicateNameMarker}は置き換え、それ以外は末尾に追加)",
+                    ReplaceNameWithPrefabName,
+                    WrappedLabelStyle);
+                if (replaceNameWithPrefabName != ReplaceNameWithPrefabName)
+                {
+                    _replaceNameWithPrefabName = replaceNameWithPrefabName;
+                    EditorPrefs.SetBool(ReplaceNameWithPrefabNamePrefKey, replaceNameWithPrefabName);
+                }
+
+                if (ReplaceNameWithPrefabName && _prefab != null)
+                {
+                    EditorGUILayout.LabelField("変更後アバター名(予測・編集可)", WrappedLabelStyle);
+                    _predictedAvatarName = EditorGUILayout.TextField(_predictedAvatarName);
+                }
+
+                var applyMeshSettingsInherit = EditorGUILayout.ToggleLeft(
+                    "MA Mesh Settingsが\"Set\"の場合、\"SetOrInherit\"に変更する(親に設定があれば継承)",
+                    ApplyMeshSettingsInherit,
+                    WrappedLabelStyle);
+                if (applyMeshSettingsInherit != ApplyMeshSettingsInherit)
+                {
+                    _applyMeshSettingsInherit = applyMeshSettingsInherit;
+                    EditorPrefs.SetBool(ApplyMeshSettingsInheritPrefKey, applyMeshSettingsInherit);
+                }
+
+                var autoApplyDistanceFade = EditorGUILayout.ToggleLeft(
+                    "追加時に距離フェードを一括適用",
+                    AutoApplyDistanceFade,
+                    WrappedLabelStyle);
+                if (autoApplyDistanceFade != AutoApplyDistanceFade)
+                {
+                    _autoApplyDistanceFade = autoApplyDistanceFade;
+                    EditorPrefs.SetBool(AutoApplyDistanceFadePrefKey, autoApplyDistanceFade);
                 }
             }
 
-            var applyMeshSettingsInherit = EditorGUILayout.ToggleLeft(
-                "MA Mesh Settingsが\"Set\"の場合、\"SetOrInherit\"に変更する(親に設定があれば継承)",
-                ApplyMeshSettingsInherit,
-                WrappedLabelStyle);
-            if (applyMeshSettingsInherit != ApplyMeshSettingsInherit)
-            {
-                _applyMeshSettingsInherit = applyMeshSettingsInherit;
-                EditorPrefs.SetBool(ApplyMeshSettingsInheritPrefKey, applyMeshSettingsInherit);
-            }
+            EditorGUILayout.Space();
 
-            var autoApplyDistanceFade = EditorGUILayout.ToggleLeft(
-                "追加時に距離フェードを一括適用",
-                AutoApplyDistanceFade,
-                WrappedLabelStyle);
-            if (autoApplyDistanceFade != AutoApplyDistanceFade)
+            using (new EditorGUI.DisabledScope(_prefab == null))
             {
-                _autoApplyDistanceFade = autoApplyDistanceFade;
-                EditorPrefs.SetBool(AutoApplyDistanceFadePrefKey, autoApplyDistanceFade);
+                if (GUILayout.Button("追加", GUILayout.Height(28)))
+                {
+                    AddItem(avatarRoot, categoryName, fadeSection);
+                }
             }
         }
 

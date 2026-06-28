@@ -17,16 +17,19 @@ namespace Vrcmst
         {
             EditorGUILayout.LabelField("距離フェード一括適用 (lilToon)", EditorStyles.boldLabel);
 
-            FadeColor = EditorGUILayout.ColorField("フェードカラー", FadeColor);
-            FadeStart = EditorGUILayout.FloatField("フェード開始距離", FadeStart);
-            FadeEnd = EditorGUILayout.FloatField("フェード終了距離", FadeEnd);
-            Strength = EditorGUILayout.FloatField("強度", Strength);
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                FadeColor = EditorGUILayout.ColorField("フェードカラー", FadeColor);
+                FadeStart = EditorGUILayout.FloatField("フェード開始距離", FadeStart);
+                FadeEnd = EditorGUILayout.FloatField("フェード終了距離", FadeEnd);
+                Strength = EditorGUILayout.FloatField("強度", Strength);
+            }
 
             EditorGUILayout.Space();
 
             using (new EditorGUI.DisabledScope(Selection.activeGameObject == null))
             {
-                if (GUILayout.Button("選択オブジェクト以下に適用"))
+                if (GUILayout.Button("選択オブジェクト以下に適用", GUILayout.Height(28)))
                 {
                     Apply(Selection.activeGameObject);
                 }
