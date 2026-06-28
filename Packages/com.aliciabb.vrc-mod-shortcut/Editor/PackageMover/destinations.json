@@ -1,0 +1,11 @@
+{
+    "destinations": [
+        { "label": "衣装",           "path": "Assets/衣装" },
+        { "label": "アバター",       "path": "Assets/アバター" },
+        { "label": "髪型",           "path": "Assets/髪型" },
+        { "label": "ツール",         "path": "Assets/ツール" },
+        { "label": "シェーダー",     "path": "Assets/シェーダー" },
+        { "label": "ギミック",       "path": "Assets/ギミック" },
+        { "label": "マテリアル",     "path": "Assets/マテリアル・テクスチャ" }
+    ]
+}
