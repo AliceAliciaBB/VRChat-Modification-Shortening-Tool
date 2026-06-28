@@ -77,7 +77,7 @@ namespace Vrcmst
             _prefab = (GameObject)EditorGUILayout.ObjectField("プレハブ", _prefab, typeof(GameObject), false);
             if (_prefab != null && _prefab != previousPrefab && avatarRoot != null && ReplaceNameWithPrefabName)
             {
-                ModularAvatarOps.RenameDuplicateForPrefabAssignment(avatarRoot, _prefab.name);
+                ModularAvatarOps.ApplyPrefabNameToAvatarName(avatarRoot, _prefab.name);
             }
 
             var itemTypeIndex = System.Array.IndexOf(ItemTypeValues, _itemType);
@@ -92,7 +92,7 @@ namespace Vrcmst
             }
 
             var replaceNameWithPrefabName = EditorGUILayout.ToggleLeft(
-                $"複製直後の仮名(_{ModularAvatarOps.DuplicateNameMarker})をプレハブ名で置き換える",
+                $"プレハブ割り当て時にアバター名へ反映する(仮名_{ModularAvatarOps.DuplicateNameMarker}は置き換え、それ以外は末尾に追加)",
                 ReplaceNameWithPrefabName);
             if (replaceNameWithPrefabName != ReplaceNameWithPrefabName)
             {

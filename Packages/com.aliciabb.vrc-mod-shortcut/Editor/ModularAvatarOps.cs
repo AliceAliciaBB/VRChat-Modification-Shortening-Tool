@@ -175,14 +175,12 @@ namespace Vrcmst
             return avatarRoot != null && DuplicateSuffixPattern.IsMatch(avatarRoot.name);
         }
 
-        // 「..._複製」の仮名をプレハブ名に置き換える。仮名のパターンに一致しない場合は何もしない
-        // (複製を経ていない元アバターを誤ってリネームしないため)。
-        public static void RenameDuplicateForPrefabAssignment(GameObject avatarRoot, string prefabName)
+        // アバター名にプレハブ名を反映する。仮名「..._複製」のままならその部分を置き換え、
+        // それ以外(複製していない元アバターや、既にリネーム済みの名前)なら末尾に追加する。
+        public static void ApplyPrefabNameToAvatarName(GameObject avatarRoot, string prefabName)
         {
             var match = DuplicateSuffixPattern.Match(avatarRoot.name);
-            if (!match.Success) return;
-
-            var baseName = avatarRoot.name.Substring(0, match.Index);
+            var baseName = match.Success ? avatarRoot.name.Substring(0, match.Index) : avatarRoot.name;
             var desiredName = GameObjectUtility.GetUniqueNameForSibling(avatarRoot.transform.parent, baseName + "_" + prefabName);
 
             Undo.RecordObject(avatarRoot, "Rename Avatar");
