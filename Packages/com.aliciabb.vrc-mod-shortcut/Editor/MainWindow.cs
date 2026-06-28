@@ -70,7 +70,10 @@ namespace Vrcmst
                 _menuSetupSection.DrawGUI(avatarRoot);
 
                 DrawSeparator();
-                _costumeSection.DrawGUI(avatarRoot, _distanceFadeSection);
+                _costumeSection.DrawGUI(avatarRoot, _distanceFadeSection, newAvatarRoot =>
+                {
+                    _avatar = newAvatarRoot.GetComponent<VRCAvatarDescriptor>();
+                });
 
                 if (_costumeSection.IsHairstyleTypeSelected)
                 {

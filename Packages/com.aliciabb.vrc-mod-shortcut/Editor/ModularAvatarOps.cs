@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using VRC.SDK3.Avatars.ScriptableObjects;
 using Object = UnityEngine.Object;
+using PipelineManager = VRC.Core.PipelineManager;
 
 namespace Vrcmst
 {
@@ -127,6 +128,32 @@ namespace Vrcmst
             Undo.RegisterCreatedObjectUndo(instance, "Instantiate " + prefabAsset.name);
             instance.transform.SetParent(parent.transform, false);
             return instance;
+        }
+
+        // 元アバターを複製し、複製先を「<元の名前>_<nameSuffix>」にリネームしてPipeline Manager(blueprintId)を
+        // デタッチした上で返す。元アバターは非表示にして残す(以降の改変は複製側に対して行う)。
+        public static GameObject DuplicateAvatarForModification(GameObject original, string nameSuffix)
+        {
+            var copy = Object.Instantiate(original);
+            Undo.RegisterCreatedObjectUndo(copy, "Duplicate Avatar For Modification");
+            copy.transform.SetParent(original.transform.parent, false);
+            copy.transform.localPosition = original.transform.localPosition;
+            copy.transform.localRotation = original.transform.localRotation;
+            copy.transform.localScale = original.transform.localScale;
+            copy.name = original.name + "_" + nameSuffix;
+
+            Undo.RecordObject(original, "Hide Original Avatar");
+            original.SetActive(false);
+
+            var pipelineManager = copy.GetComponent<PipelineManager>();
+            if (pipelineManager != null)
+            {
+                Undo.RecordObject(pipelineManager, "Detach Pipeline Manager");
+                pipelineManager.blueprintId = "";
+                PrefabUtility.RecordPrefabInstancePropertyModifications(pipelineManager);
+            }
+
+            return copy;
         }
 
         public static void RunSetupOutfit(GameObject outfitRoot)

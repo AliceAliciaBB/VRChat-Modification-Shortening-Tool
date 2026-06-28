@@ -4,7 +4,8 @@
     "references": [
         "nadena.dev.modular-avatar.core",
         "nadena.dev.modular-avatar.core.editor",
-        "VRC.SDK3A"
+        "VRC.SDK3A",
+        "VRC.SDKBase"
     ],
     "includePlatforms": [
         "Editor"
