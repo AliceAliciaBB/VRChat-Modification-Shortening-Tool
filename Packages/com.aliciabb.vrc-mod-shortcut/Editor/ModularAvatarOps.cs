@@ -137,14 +137,19 @@ namespace Vrcmst
 
         // 元アバターを複製し、複製先を「<元の名前>_<nameSuffix>」にリネームしてPipeline Manager(blueprintId)を
         // デタッチした上で返す。元アバターは非表示にして残す(以降の改変は複製側に対して行う)。
+        // Object.Instantiateだとプレハブインスタンスの接続が外れてしまうため、Ctrl+D(Edit > Duplicate)と
+        // 同じ内部APIを使い、元になるプレハブとの接続(後で元プレハブを更新した際の反映)を維持する。
         public static GameObject DuplicateAvatarForModification(GameObject original, string nameSuffix)
         {
-            var copy = Object.Instantiate(original);
-            Undo.RegisterCreatedObjectUndo(copy, "Duplicate Avatar For Modification");
-            copy.transform.SetParent(original.transform.parent, false);
-            copy.transform.localPosition = original.transform.localPosition;
-            copy.transform.localRotation = original.transform.localRotation;
-            copy.transform.localScale = original.transform.localScale;
+            Undo.IncrementCurrentGroup();
+            Undo.SetCurrentGroupName("Duplicate Avatar For Modification");
+
+            var previousSelection = Selection.objects;
+            Selection.objects = new Object[] { original };
+            Unsupported.DuplicateGameObjectsUsingPasteboard();
+            var copy = Selection.activeGameObject;
+            Selection.objects = previousSelection;
+
             copy.name = GameObjectUtility.GetUniqueNameForSibling(copy.transform.parent, original.name + "_" + nameSuffix);
 
             Undo.RecordObject(original, "Hide Original Avatar");
@@ -157,6 +162,8 @@ namespace Vrcmst
                 pipelineManager.blueprintId = "";
                 PrefabUtility.RecordPrefabInstancePropertyModifications(pipelineManager);
             }
+
+            Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
 
             return copy;
         }
