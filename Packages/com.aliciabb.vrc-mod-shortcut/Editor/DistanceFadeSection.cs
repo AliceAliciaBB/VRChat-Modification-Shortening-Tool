@@ -78,18 +78,6 @@ namespace Vrcmst
 
         public void DrawGUI()
         {
-            EditorGUILayout.LabelField("⑤ 距離フェード一括適用 (lilToon)", EditorStyles.boldLabel);
-
-            using (new EditorGUILayout.VerticalScope("box"))
-            {
-                FadeColor = EditorGUILayout.ColorField("フェードカラー", FadeColor);
-                FadeStart = EditorGUILayout.FloatField("フェード開始距離", FadeStart);
-                FadeEnd = EditorGUILayout.FloatField("フェード終了距離", FadeEnd);
-                Strength = EditorGUILayout.FloatField("強度", Strength);
-            }
-
-            EditorGUILayout.Space();
-
             using (new EditorGUILayout.VerticalScope("box"))
             {
                 EditorGUILayout.LabelField("⑤ 詳細設定(変更頻度が低い項目)", EditorStyles.miniBoldLabel);
@@ -109,6 +97,18 @@ namespace Vrcmst
                     _applyMeshSettingsInheritOnAdd = applyMeshSettingsInheritOnAdd;
                     EditorPrefs.SetBool(ApplyMeshSettingsInheritOnAddPrefKey, applyMeshSettingsInheritOnAdd);
                 }
+            }
+
+            EditorGUILayout.Space();
+
+            EditorGUILayout.LabelField("⑤ 距離フェード一括適用 (lilToon)", EditorStyles.boldLabel);
+
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                FadeColor = EditorGUILayout.ColorField("フェードカラー", FadeColor);
+                FadeStart = EditorGUILayout.FloatField("フェード開始距離", FadeStart);
+                FadeEnd = EditorGUILayout.FloatField("フェード終了距離", FadeEnd);
+                Strength = EditorGUILayout.FloatField("強度", Strength);
             }
 
             EditorGUILayout.Space();
