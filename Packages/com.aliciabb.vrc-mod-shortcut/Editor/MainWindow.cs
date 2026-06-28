@@ -18,33 +18,68 @@ namespace Vrcmst
         [MenuItem("ALICILIA/VRChat改変ショートカット")]
         public static void ShowWindow()
         {
-            GetWindow<MainWindow>("改変ショートカット");
+            Debug.Log("[VRCMST] ShowWindow() 呼び出し開始");
+            try
+            {
+                var window = GetWindow<MainWindow>("改変ショートカット");
+                Debug.Log($"[VRCMST] GetWindow完了: window={(window != null ? window.ToString() : "null")}, instanceID={(window != null ? window.GetInstanceID() : 0)}");
+                window.Show();
+                window.Focus();
+                Debug.Log($"[VRCMST] Show()/Focus()完了: position={window.position}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[VRCMST] ShowWindow()で例外発生: " + e);
+            }
+        }
+
+        private void OnEnable()
+        {
+            Debug.Log("[VRCMST] MainWindow.OnEnable instanceID=" + GetInstanceID());
+        }
+
+        private void OnDisable()
+        {
+            Debug.Log("[VRCMST] MainWindow.OnDisable instanceID=" + GetInstanceID());
+        }
+
+        private void OnDestroy()
+        {
+            Debug.Log("[VRCMST] MainWindow.OnDestroy instanceID=" + GetInstanceID());
         }
 
         private void OnGUI()
         {
-            DrawAvatarField();
-
-            var avatarRoot = _avatar != null ? _avatar.gameObject : null;
-
-            _scroll = EditorGUILayout.BeginScrollView(_scroll);
-
-            EditorGUILayout.Space();
-            _menuSetupSection.DrawGUI(avatarRoot);
-
-            DrawSeparator();
-            _costumeSection.DrawGUI(avatarRoot, _distanceFadeSection);
-
-            if (_costumeSection.IsHairstyleTypeSelected)
+            try
             {
+                DrawAvatarField();
+
+                var avatarRoot = _avatar != null ? _avatar.gameObject : null;
+
+                _scroll = EditorGUILayout.BeginScrollView(_scroll);
+
+                EditorGUILayout.Space();
+                _menuSetupSection.DrawGUI(avatarRoot);
+
                 DrawSeparator();
-                _hairstyleSection.DrawGUI(avatarRoot);
+                _costumeSection.DrawGUI(avatarRoot, _distanceFadeSection);
+
+                if (_costumeSection.IsHairstyleTypeSelected)
+                {
+                    DrawSeparator();
+                    _hairstyleSection.DrawGUI(avatarRoot);
+                }
+
+                DrawSeparator();
+                _distanceFadeSection.DrawGUI();
+
+                EditorGUILayout.EndScrollView();
             }
-
-            DrawSeparator();
-            _distanceFadeSection.DrawGUI();
-
-            EditorGUILayout.EndScrollView();
+            catch (System.Exception e)
+            {
+                Debug.LogError("[VRCMST] OnGUI()で例外発生: " + e);
+                throw;
+            }
         }
 
         private void DrawAvatarField()
