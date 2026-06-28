@@ -107,7 +107,11 @@ namespace Vrcmst
             {
                 if (_wrappedLabelStyle == null)
                 {
-                    _wrappedLabelStyle = new GUIStyle(EditorStyles.label) { wordWrap = true };
+                    _wrappedLabelStyle = new GUIStyle(EditorStyles.label)
+                    {
+                        wordWrap = true,
+                        margin = new RectOffset(2, 2, 4, 4),
+                    };
                 }
 
                 return _wrappedLabelStyle;
