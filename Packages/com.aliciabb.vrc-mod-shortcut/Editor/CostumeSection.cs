@@ -118,6 +118,18 @@ namespace Vrcmst
             }
         }
 
+        // EditorGUILayout.ToggleLeftはwordWrap指定のGUIStyleを渡しても折り返し後の高さを
+        // 正しくレイアウトに反映しないため(囲っているboxの高さが不足し文字が切れる)、
+        // CalcHeightで必要な高さを計算したRectを自前で確保してから描画する。
+        private bool WrappedToggleLeft(string label, bool value)
+        {
+            var content = new GUIContent(label);
+            var width = Mathf.Max(EditorGUIUtility.currentViewWidth - 60f, 50f);
+            var height = WrappedLabelStyle.CalcHeight(content, width);
+            var rect = GUILayoutUtility.GetRect(0, height, GUILayout.ExpandWidth(true));
+            return EditorGUI.ToggleLeft(rect, content, value, WrappedLabelStyle);
+        }
+
         public void DrawGUI(GameObject avatarRoot, DistanceFadeSection fadeSection)
         {
             EditorGUILayout.LabelField("③ アイテム追加 (プレハブ → 格納先)", EditorStyles.boldLabel);
@@ -154,10 +166,9 @@ namespace Vrcmst
             {
                 EditorGUILayout.LabelField("追加オプション", EditorStyles.miniBoldLabel);
 
-                var replaceNameWithPrefabName = EditorGUILayout.ToggleLeft(
+                var replaceNameWithPrefabName = WrappedToggleLeft(
                     $"プレハブ割り当て時にアバター名へ反映する(仮名_{ModularAvatarOps.DuplicateNameMarker}は置き換え、それ以外は末尾に追加)",
-                    ReplaceNameWithPrefabName,
-                    WrappedLabelStyle);
+                    ReplaceNameWithPrefabName);
                 if (replaceNameWithPrefabName != ReplaceNameWithPrefabName)
                 {
                     _replaceNameWithPrefabName = replaceNameWithPrefabName;
@@ -170,30 +181,27 @@ namespace Vrcmst
                     _predictedAvatarName = EditorGUILayout.TextField(_predictedAvatarName);
                 }
 
-                var applyMeshSettingsInherit = EditorGUILayout.ToggleLeft(
+                var applyMeshSettingsInherit = WrappedToggleLeft(
                     "MA Mesh Settingsが設定の場合、親に設定があれば継承に変更する",
-                    ApplyMeshSettingsInherit,
-                    WrappedLabelStyle);
+                    ApplyMeshSettingsInherit);
                 if (applyMeshSettingsInherit != ApplyMeshSettingsInherit)
                 {
                     _applyMeshSettingsInherit = applyMeshSettingsInherit;
                     EditorPrefs.SetBool(ApplyMeshSettingsInheritPrefKey, applyMeshSettingsInherit);
                 }
 
-                var autoApplyDistanceFade = EditorGUILayout.ToggleLeft(
+                var autoApplyDistanceFade = WrappedToggleLeft(
                     "追加時に距離フェードを一括適用",
-                    AutoApplyDistanceFade,
-                    WrappedLabelStyle);
+                    AutoApplyDistanceFade);
                 if (autoApplyDistanceFade != AutoApplyDistanceFade)
                 {
                     _autoApplyDistanceFade = autoApplyDistanceFade;
                     EditorPrefs.SetBool(AutoApplyDistanceFadePrefKey, autoApplyDistanceFade);
                 }
 
-                var showTranslationSection = EditorGUILayout.ToggleLeft(
+                var showTranslationSection = WrappedToggleLeft(
                     "衣装追加後にメニュー名の翻訳区画を表示する(自動翻訳/手動編集してから適用)",
-                    ShowTranslationSection,
-                    WrappedLabelStyle);
+                    ShowTranslationSection);
                 if (showTranslationSection != ShowTranslationSection)
                 {
                     _showTranslationSection = showTranslationSection;
