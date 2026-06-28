@@ -23,7 +23,7 @@ namespace Vrcmst
         private const string AutoApplyDistanceFadePrefKey = "Vrcmst.CostumeSection.AutoApplyDistanceFade";
         private const string ReplaceNameWithPrefabNamePrefKey = "Vrcmst.CostumeSection.ReplaceNameWithPrefabName";
         private const string ApplyMeshSettingsInheritPrefKey = "Vrcmst.CostumeSection.ApplyMeshSettingsInherit";
-        private const string TranslateMenuNamesPrefKey = "Vrcmst.CostumeSection.TranslateMenuNames";
+        private const string ShowTranslationSectionPrefKey = "Vrcmst.CostumeSection.ShowTranslationSection";
 
         private const string TranslateFromLanguage = "en";
         private const string TranslateToLanguage = "ja";
@@ -34,8 +34,11 @@ namespace Vrcmst
         private bool? _autoApplyDistanceFade;
         private bool? _replaceNameWithPrefabName;
         private bool? _applyMeshSettingsInherit;
-        private bool? _translateMenuNames;
+        private bool? _showTranslationSection;
         private string _predictedAvatarName = "";
+
+        private readonly List<ModularAvatarMenuItem> _pendingTranslationItems = new List<ModularAvatarMenuItem>();
+        private readonly List<string> _pendingTranslationNames = new List<string>();
 
         // ④(髪型の排他グループ化)を表示すべきか、MainWindowから参照するための公開フラグ。
         public bool IsHairstyleTypeSelected => _itemType == ItemType.Hairstyle;
@@ -81,16 +84,16 @@ namespace Vrcmst
             }
         }
 
-        private bool TranslateMenuNames
+        private bool ShowTranslationSection
         {
             get
             {
-                if (_translateMenuNames == null)
+                if (_showTranslationSection == null)
                 {
-                    _translateMenuNames = EditorPrefs.GetBool(TranslateMenuNamesPrefKey, false);
+                    _showTranslationSection = EditorPrefs.GetBool(ShowTranslationSectionPrefKey, false);
                 }
 
-                return _translateMenuNames.Value;
+                return _showTranslationSection.Value;
             }
         }
 
@@ -183,14 +186,14 @@ namespace Vrcmst
                     EditorPrefs.SetBool(AutoApplyDistanceFadePrefKey, autoApplyDistanceFade);
                 }
 
-                var translateMenuNames = EditorGUILayout.ToggleLeft(
-                    $"衣装追加時にメニュー名を自動翻訳する({TranslateFromLanguage}→{TranslateToLanguage}、Google翻訳の無料エンドポイントを使用)",
-                    TranslateMenuNames,
+                var showTranslationSection = EditorGUILayout.ToggleLeft(
+                    "衣装追加後にメニュー名の翻訳区画を表示する(自動翻訳/手動編集してから適用)",
+                    ShowTranslationSection,
                     WrappedLabelStyle);
-                if (translateMenuNames != TranslateMenuNames)
+                if (showTranslationSection != ShowTranslationSection)
                 {
-                    _translateMenuNames = translateMenuNames;
-                    EditorPrefs.SetBool(TranslateMenuNamesPrefKey, translateMenuNames);
+                    _showTranslationSection = showTranslationSection;
+                    EditorPrefs.SetBool(ShowTranslationSectionPrefKey, showTranslationSection);
                 }
             }
 
@@ -203,6 +206,98 @@ namespace Vrcmst
                     AddItem(avatarRoot, categoryName, fadeSection);
                 }
             }
+
+            if (_pendingTranslationItems.Count > 0)
+            {
+                EditorGUILayout.Space();
+                DrawTranslationSection();
+            }
+        }
+
+        private void DrawTranslationSection()
+        {
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                EditorGUILayout.LabelField("メニュー名の翻訳", EditorStyles.miniBoldLabel);
+                EditorGUILayout.LabelField(
+                    "「自動翻訳」で一括翻訳するか、各行を直接編集してから「適用」を押してください。",
+                    WrappedLabelStyle);
+
+                for (var i = 0; i < _pendingTranslationItems.Count; i++)
+                {
+                    if (_pendingTranslationItems[i] == null) continue;
+
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        EditorGUILayout.LabelField(_pendingTranslationItems[i].Control.name, GUILayout.Width(160));
+                        EditorGUILayout.LabelField("→", GUILayout.Width(15));
+                        _pendingTranslationNames[i] = EditorGUILayout.TextField(_pendingTranslationNames[i]);
+                    }
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button($"自動翻訳 ({TranslateFromLanguage}→{TranslateToLanguage})"))
+                    {
+                        AutoFillTranslations();
+                    }
+
+                    if (GUILayout.Button("適用"))
+                    {
+                        ApplyPendingTranslations();
+                    }
+
+                    if (GUILayout.Button("閉じる(適用しない)"))
+                    {
+                        _pendingTranslationItems.Clear();
+                        _pendingTranslationNames.Clear();
+                    }
+                }
+            }
+        }
+
+        private void AutoFillTranslations()
+        {
+            var normalizedNames = _pendingTranslationItems
+                .Select(item => TranslationOps.NormalizeForTranslation(item.Control.name))
+                .ToArray();
+
+            try
+            {
+                var translated = TranslationOps.Translate(normalizedNames, TranslateFromLanguage, TranslateToLanguage);
+                for (var i = 0; i < _pendingTranslationNames.Count && i < translated.Length; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(translated[i]))
+                    {
+                        _pendingTranslationNames[i] = translated[i];
+                    }
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[VRCMST] メニュー名の自動翻訳に失敗しました: " + e.Message);
+            }
+        }
+
+        private void ApplyPendingTranslations()
+        {
+            for (var i = 0; i < _pendingTranslationItems.Count; i++)
+            {
+                var item = _pendingTranslationItems[i];
+                if (item == null) continue;
+
+                var newName = _pendingTranslationNames[i];
+                if (string.IsNullOrWhiteSpace(newName)) continue;
+
+                Undo.RecordObject(item, "Translate Menu Item Name");
+                var control = item.Control;
+                control.name = newName;
+                item.Control = control;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(item);
+            }
+
+            _pendingTranslationItems.Clear();
+            _pendingTranslationNames.Clear();
         }
 
         private void AddItem(GameObject avatarRoot, string categoryName, DistanceFadeSection fadeSection)
@@ -238,9 +333,15 @@ namespace Vrcmst
                         ModularAvatarOps.WireInstallerToCategoryMenu(installer, menuAsset);
                     }
 
-                    if (TranslateMenuNames)
+                    if (ShowTranslationSection)
                     {
-                        TranslateMenuItemNames(createdMenuItems);
+                        _pendingTranslationItems.Clear();
+                        _pendingTranslationNames.Clear();
+                        foreach (var item in createdMenuItems)
+                        {
+                            _pendingTranslationItems.Add(item);
+                            _pendingTranslationNames.Add(item.Control.name);
+                        }
                     }
 
                     break;
@@ -268,40 +369,6 @@ namespace Vrcmst
             Selection.activeGameObject = instance;
             _prefab = null;
             _predictedAvatarName = "";
-        }
-
-        // 生成されたメニュー項目の名前を翻訳して反映する。1つでも失敗したら元の名前のまま残す
-        // (ネットワークエラー等でアイテム追加自体が失敗した状態にならないようにする)。
-        private static void TranslateMenuItemNames(List<ModularAvatarMenuItem> menuItems)
-        {
-            if (menuItems == null || menuItems.Count == 0) return;
-
-            var normalizedNames = menuItems
-                .Select(item => TranslationOps.NormalizeForTranslation(item.Control.name))
-                .ToArray();
-
-            string[] translated;
-            try
-            {
-                translated = TranslationOps.Translate(normalizedNames, TranslateFromLanguage, TranslateToLanguage);
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError("[VRCMST] メニュー名の翻訳に失敗しました。元の名前のままにします: " + e.Message);
-                return;
-            }
-
-            for (var i = 0; i < menuItems.Count; i++)
-            {
-                if (string.IsNullOrWhiteSpace(translated[i])) continue;
-
-                var item = menuItems[i];
-                Undo.RecordObject(item, "Translate Menu Item Name");
-                var control = item.Control;
-                control.name = translated[i];
-                item.Control = control;
-                PrefabUtility.RecordPrefabInstancePropertyModifications(item);
-            }
         }
     }
 }
