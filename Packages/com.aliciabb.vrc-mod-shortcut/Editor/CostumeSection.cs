@@ -28,6 +28,7 @@ namespace Vrcmst
         private bool? _autoApplyDistanceFade;
         private bool? _replaceNameWithPrefabName;
         private bool? _applyMeshSettingsInherit;
+        private string _predictedAvatarName = "";
 
         // ④(髪型の排他グループ化)を表示すべきか、MainWindowから参照するための公開フラグ。
         public bool IsHairstyleTypeSelected => _itemType == ItemType.Hairstyle;
@@ -92,7 +93,7 @@ namespace Vrcmst
             _prefab = (GameObject)EditorGUILayout.ObjectField("プレハブ", _prefab, typeof(GameObject), false);
             if (_prefab != null && _prefab != previousPrefab && avatarRoot != null && ReplaceNameWithPrefabName)
             {
-                ModularAvatarOps.ApplyPrefabNameToAvatarName(avatarRoot, _prefab.name);
+                _predictedAvatarName = ModularAvatarOps.PredictAvatarNameForPrefab(avatarRoot, _prefab.name);
             }
 
             var itemTypeIndex = System.Array.IndexOf(ItemTypeValues, _itemType);
@@ -113,6 +114,11 @@ namespace Vrcmst
             {
                 _replaceNameWithPrefabName = replaceNameWithPrefabName;
                 EditorPrefs.SetBool(ReplaceNameWithPrefabNamePrefKey, replaceNameWithPrefabName);
+            }
+
+            if (ReplaceNameWithPrefabName && _prefab != null)
+            {
+                _predictedAvatarName = EditorGUILayout.TextField("変更後アバター名(予測・編集可)", _predictedAvatarName);
             }
 
             var applyMeshSettingsInherit = EditorGUILayout.ToggleLeft(
@@ -184,8 +190,14 @@ namespace Vrcmst
                     break;
             }
 
+            if (ReplaceNameWithPrefabName)
+            {
+                ModularAvatarOps.RenameAvatar(avatarRoot, _predictedAvatarName);
+            }
+
             Selection.activeGameObject = instance;
             _prefab = null;
+            _predictedAvatarName = "";
         }
     }
 }

@@ -175,16 +175,23 @@ namespace Vrcmst
             return avatarRoot != null && DuplicateSuffixPattern.IsMatch(avatarRoot.name);
         }
 
-        // アバター名にプレハブ名を反映する。仮名「..._複製」のままならその部分を置き換え、
-        // それ以外(複製していない元アバターや、既にリネーム済みの名前)なら末尾に追加する。
-        public static void ApplyPrefabNameToAvatarName(GameObject avatarRoot, string prefabName)
+        // プレハブ名を反映した場合の予測アバター名を返す(副作用無し)。仮名「..._複製」のままなら
+        // その部分を置き換え、それ以外(複製していない元アバターや、既にリネーム済みの名前)なら末尾に追加する。
+        // UI側でこの予測値をユーザーが編集できるようにするため、ここでは一意化(連番付与)は行わない。
+        public static string PredictAvatarNameForPrefab(GameObject avatarRoot, string prefabName)
         {
             var match = DuplicateSuffixPattern.Match(avatarRoot.name);
             var baseName = match.Success ? avatarRoot.name.Substring(0, match.Index) : avatarRoot.name;
-            var desiredName = GameObjectUtility.GetUniqueNameForSibling(avatarRoot.transform.parent, baseName + "_" + prefabName);
+            return baseName + "_" + prefabName;
+        }
+
+        // avatarRootの名前を実際に変更する。兄弟と重複する場合は連番を付与する。
+        public static void RenameAvatar(GameObject avatarRoot, string desiredName)
+        {
+            if (string.IsNullOrWhiteSpace(desiredName) || desiredName == avatarRoot.name) return;
 
             Undo.RecordObject(avatarRoot, "Rename Avatar");
-            avatarRoot.name = desiredName;
+            avatarRoot.name = GameObjectUtility.GetUniqueNameForSibling(avatarRoot.transform.parent, desiredName);
         }
 
         public static void RunSetupOutfit(GameObject outfitRoot)
