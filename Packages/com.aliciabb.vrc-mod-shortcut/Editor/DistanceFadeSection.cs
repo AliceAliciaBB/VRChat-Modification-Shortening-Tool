@@ -78,7 +78,7 @@ namespace Vrcmst
 
         public void DrawGUI()
         {
-            EditorGUILayout.LabelField("距離フェード一括適用 (lilToon)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("⑤ 距離フェード一括適用 (lilToon)", EditorStyles.boldLabel);
 
             using (new EditorGUILayout.VerticalScope("box"))
             {
@@ -90,19 +90,9 @@ namespace Vrcmst
 
             EditorGUILayout.Space();
 
-            using (new EditorGUI.DisabledScope(Selection.activeGameObject == null))
-            {
-                if (GUILayout.Button("選択オブジェクト以下に適用", GUILayout.Height(28)))
-                {
-                    Apply(Selection.activeGameObject);
-                }
-            }
-
-            EditorGUILayout.Space();
-
             using (new EditorGUILayout.VerticalScope("box"))
             {
-                EditorGUILayout.LabelField("③アイテム追加 詳細設定(変更頻度が低い項目)", EditorStyles.miniBoldLabel);
+                EditorGUILayout.LabelField("⑤ 詳細設定(変更頻度が低い項目)", EditorStyles.miniBoldLabel);
 
                 var autoApplyOnAdd = WrappedToggleLeft("追加時に距離フェードを一括適用", AutoApplyOnAdd);
                 if (autoApplyOnAdd != AutoApplyOnAdd)
@@ -118,6 +108,16 @@ namespace Vrcmst
                 {
                     _applyMeshSettingsInheritOnAdd = applyMeshSettingsInheritOnAdd;
                     EditorPrefs.SetBool(ApplyMeshSettingsInheritOnAddPrefKey, applyMeshSettingsInheritOnAdd);
+                }
+            }
+
+            EditorGUILayout.Space();
+
+            using (new EditorGUI.DisabledScope(Selection.activeGameObject == null))
+            {
+                if (GUILayout.Button("選択オブジェクト以下に適用", GUILayout.Height(28)))
+                {
+                    Apply(Selection.activeGameObject);
                 }
             }
         }
