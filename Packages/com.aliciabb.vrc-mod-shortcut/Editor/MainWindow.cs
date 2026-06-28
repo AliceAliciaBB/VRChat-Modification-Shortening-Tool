@@ -23,6 +23,14 @@ namespace Vrcmst
             {
                 var window = GetWindow<MainWindow>("改変ショートカット");
                 Debug.Log($"[VRCMST] GetWindow完了: window={(window != null ? window.ToString() : "null")}, instanceID={(window != null ? window.GetInstanceID() : 0)}");
+
+                window.minSize = new Vector2(420, 500);
+                // 以前のレイアウト保存が壊れている(幅/高さが極端に小さい)場合は既定サイズに戻す。
+                if (window.position.width < 100 || window.position.height < 100)
+                {
+                    window.position = new Rect(100, 100, 600, 700);
+                }
+
                 window.Show();
                 window.Focus();
                 Debug.Log($"[VRCMST] Show()/Focus()完了: position={window.position}");
