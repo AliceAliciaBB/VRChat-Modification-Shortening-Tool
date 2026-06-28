@@ -15,7 +15,7 @@ namespace Vrcmst
             WholeAvatar,
         }
 
-        private static readonly string[] ScopeLabels = { "カテゴリ内", "アバター全体" };
+        private static readonly string[] ScopeLabels = { "格納先内", "アバター全体" };
         private static readonly Scope[] ScopeValues = { Scope.Category, Scope.WholeAvatar };
 
         private Scope _scope = Scope.Category;
@@ -45,12 +45,12 @@ namespace Vrcmst
                 var categories = MenuSetupSection.GetCategoryNames(avatarRoot);
                 if (categories.Count == 0)
                 {
-                    EditorGUILayout.HelpBox("先に②でカテゴリを作成してください。", MessageType.Info);
+                    EditorGUILayout.HelpBox("先に②で格納先を作成してください。", MessageType.Info);
                     return;
                 }
 
                 _categoryIndex = Mathf.Clamp(_categoryIndex, 0, categories.Count - 1);
-                _categoryIndex = EditorGUILayout.Popup("カテゴリ", _categoryIndex, categories.ToArray());
+                _categoryIndex = EditorGUILayout.Popup("格納先", _categoryIndex, categories.ToArray());
                 var categoryName = categories[_categoryIndex];
                 scopeRoot = MenuSetupSection.GetObjectCategoryRoot(avatarRoot, categoryName);
                 defaultParamName = categoryName;

@@ -5,8 +5,8 @@ using VRC.SDK3.Avatars.ScriptableObjects;
 
 namespace Vrcmst
 {
-    // 手順書の「①メニュー初期セットアップ」「②カテゴリ作成」に対応するUIと、
-    // 他セクションがカテゴリ構造(O_<name> / M_<name>)を参照するための静的ヘルパー。
+    // 手順書の「①メニュー初期セットアップ」「②格納先作成」に対応するUIと、
+    // 他セクションが格納先構造(O_<name> / M_<name>)を参照するための静的ヘルパー。
     internal class MenuSetupSection
     {
         private string _categoryName = "";
@@ -24,13 +24,13 @@ namespace Vrcmst
             }
 
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("② カテゴリ作成 (O_<name> / M_<name>)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("② 格納先作成 (O_<name> / M_<name>)", EditorStyles.boldLabel);
 
-            _categoryName = EditorGUILayout.TextField("カテゴリ名", _categoryName);
+            _categoryName = EditorGUILayout.TextField("格納先名", _categoryName);
 
             using (new EditorGUI.DisabledScope(avatarRoot == null || string.IsNullOrWhiteSpace(_categoryName)))
             {
-                if (GUILayout.Button("カテゴリを作成"))
+                if (GUILayout.Button("格納先を作成"))
                 {
                     var menuObjRoot = ModularAvatarOps.EnsureMenuObjRoot(avatarRoot);
                     ModularAvatarOps.EnsureObjectCategoryRoot(avatarRoot, _categoryName);

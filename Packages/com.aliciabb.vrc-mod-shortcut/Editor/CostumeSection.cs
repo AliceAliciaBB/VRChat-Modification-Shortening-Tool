@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Vrcmst
 {
-    // 手順書の「③アイテム追加」に対応。プレハブをカテゴリへ追加し、
+    // 手順書の「③アイテム追加」に対応。プレハブを格納先へ追加し、
     // メニュー作成タイプ(衣装/髪型/その他)に応じて以降の処理を分岐する。
     internal class CostumeSection
     {
@@ -45,17 +45,17 @@ namespace Vrcmst
 
         public void DrawGUI(GameObject avatarRoot, DistanceFadeSection fadeSection)
         {
-            EditorGUILayout.LabelField("③ アイテム追加 (プレハブ → カテゴリ)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("③ アイテム追加 (プレハブ → 格納先)", EditorStyles.boldLabel);
 
             var categories = MenuSetupSection.GetCategoryNames(avatarRoot);
             if (categories.Count == 0)
             {
-                EditorGUILayout.HelpBox("先に②でカテゴリを作成してください。", MessageType.Info);
+                EditorGUILayout.HelpBox("先に②で格納先を作成してください。", MessageType.Info);
                 return;
             }
 
             _categoryIndex = Mathf.Clamp(_categoryIndex, 0, categories.Count - 1);
-            _categoryIndex = EditorGUILayout.Popup("カテゴリ", _categoryIndex, categories.ToArray());
+            _categoryIndex = EditorGUILayout.Popup("格納先", _categoryIndex, categories.ToArray());
             var categoryName = categories[_categoryIndex];
 
             _prefab = (GameObject)EditorGUILayout.ObjectField("プレハブ", _prefab, typeof(GameObject), false);
@@ -86,7 +86,7 @@ namespace Vrcmst
             var menuAsset = MenuSetupSection.GetMenuAsset(avatarRoot, categoryName);
             if (oRoot == null || menuAsset == null)
             {
-                Debug.LogError("[VRCMST] カテゴリの構造(O_/M_)が見つかりません。②でカテゴリを作成し直してください。");
+                Debug.LogError("[VRCMST] 格納先の構造(O_/M_)が見つかりません。②で格納先を作成し直してください。");
                 return;
             }
 

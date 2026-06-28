@@ -13,7 +13,7 @@ namespace Vrcmst
     // 「Create Toggle for Selection」はMA本体側がinternal実装のため、
     // MA本体(ToggleCreatorShortcut.cs)と同じ手順を直接GameObject操作で再現している。
     // メニューのインストール先は、MAのinternalな ModularAvatarMenuInstallTarget には依存せず、
-    // カテゴリごとに実体のVRCExpressionsMenuアセットを作って installTargetMenu に直接割り当てる方式にしている。
+    // 格納先ごとに実体のVRCExpressionsMenuアセットを作って installTargetMenu に直接割り当てる方式にしている。
     internal static class ModularAvatarOps
     {
         private const string ArmatureObjectName = "Armature";
@@ -218,7 +218,7 @@ namespace Vrcmst
             return toggle.AddComponent<ModularAvatarMenuInstaller>();
         }
 
-        // 生成したインストーラーの設置先を、カテゴリ(M_<name>)の実体メニューアセットに直接設定する
+        // 生成したインストーラーの設置先を、格納先(M_<name>)の実体メニューアセットに直接設定する
         public static void WireInstallerToCategoryMenu(ModularAvatarMenuInstaller installer, VRCExpressionsMenu menuAsset)
         {
             if (installer == null || menuAsset == null) return;
