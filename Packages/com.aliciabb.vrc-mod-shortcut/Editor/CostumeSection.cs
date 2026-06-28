@@ -1,11 +1,13 @@
 using System.Collections.Generic;
+using System.Linq;
+using nadena.dev.modular_avatar.core;
 using UnityEditor;
 using UnityEngine;
 
 namespace Vrcmst
 {
     // 手順書の「③アイテム追加」に対応。プレハブを格納先へ追加し、
-    // メニュー作成タイプ(衣装/髪型/その他)に応じて以降の処理を分岐する。
+    // メニュー作成タイプ(衣装/髪型/作成しない)に応じて以降の処理を分岐する。
     internal class CostumeSection
     {
         private enum ItemType
@@ -15,12 +17,16 @@ namespace Vrcmst
             Other,
         }
 
-        private static readonly string[] ItemTypeLabels = { "衣装", "髪型", "その他" };
+        private static readonly string[] ItemTypeLabels = { "衣装", "髪型", "作成しない" };
         private static readonly ItemType[] ItemTypeValues = { ItemType.Costume, ItemType.Hairstyle, ItemType.Other };
 
         private const string AutoApplyDistanceFadePrefKey = "Vrcmst.CostumeSection.AutoApplyDistanceFade";
         private const string ReplaceNameWithPrefabNamePrefKey = "Vrcmst.CostumeSection.ReplaceNameWithPrefabName";
         private const string ApplyMeshSettingsInheritPrefKey = "Vrcmst.CostumeSection.ApplyMeshSettingsInherit";
+        private const string TranslateMenuNamesPrefKey = "Vrcmst.CostumeSection.TranslateMenuNames";
+
+        private const string TranslateFromLanguage = "en";
+        private const string TranslateToLanguage = "ja";
 
         private GameObject _prefab;
         private ItemType _itemType = ItemType.Costume;
@@ -28,6 +34,7 @@ namespace Vrcmst
         private bool? _autoApplyDistanceFade;
         private bool? _replaceNameWithPrefabName;
         private bool? _applyMeshSettingsInherit;
+        private bool? _translateMenuNames;
         private string _predictedAvatarName = "";
 
         // ④(髪型の排他グループ化)を表示すべきか、MainWindowから参照するための公開フラグ。
@@ -71,6 +78,19 @@ namespace Vrcmst
                 }
 
                 return _applyMeshSettingsInherit.Value;
+            }
+        }
+
+        private bool TranslateMenuNames
+        {
+            get
+            {
+                if (_translateMenuNames == null)
+                {
+                    _translateMenuNames = EditorPrefs.GetBool(TranslateMenuNamesPrefKey, false);
+                }
+
+                return _translateMenuNames.Value;
             }
         }
 
@@ -144,7 +164,7 @@ namespace Vrcmst
                 }
 
                 var applyMeshSettingsInherit = EditorGUILayout.ToggleLeft(
-                    "MA Mesh Settingsが\"Set\"の場合、\"SetOrInherit\"に変更する(親に設定があれば継承)",
+                    "MA Mesh Settingsが設定の場合、親に設定があれば継承に変更する",
                     ApplyMeshSettingsInherit,
                     WrappedLabelStyle);
                 if (applyMeshSettingsInherit != ApplyMeshSettingsInherit)
@@ -161,6 +181,16 @@ namespace Vrcmst
                 {
                     _autoApplyDistanceFade = autoApplyDistanceFade;
                     EditorPrefs.SetBool(AutoApplyDistanceFadePrefKey, autoApplyDistanceFade);
+                }
+
+                var translateMenuNames = EditorGUILayout.ToggleLeft(
+                    $"衣装追加時にメニュー名を自動翻訳する({TranslateFromLanguage}→{TranslateToLanguage}、Google翻訳の無料エンドポイントを使用)",
+                    TranslateMenuNames,
+                    WrappedLabelStyle);
+                if (translateMenuNames != TranslateMenuNames)
+                {
+                    _translateMenuNames = translateMenuNames;
+                    EditorPrefs.SetBool(TranslateMenuNamesPrefKey, translateMenuNames);
                 }
             }
 
@@ -202,17 +232,21 @@ namespace Vrcmst
                 case ItemType.Costume:
                     ModularAvatarOps.RunSetupOutfit(instance);
                     var targets = ModularAvatarOps.GetNonArmatureChildren(instance);
-                    var installers = ModularAvatarOps.CreateTogglesForSelection(avatarRoot, targets);
+                    var installers = ModularAvatarOps.CreateTogglesForSelection(avatarRoot, targets, out var createdMenuItems);
                     foreach (var installer in installers)
                     {
                         ModularAvatarOps.WireInstallerToCategoryMenu(installer, menuAsset);
                     }
 
-                    // メニューの翻訳は手順書でも「検討のみ・実装は後回し」とされているため未対応(TODO)。
+                    if (TranslateMenuNames)
+                    {
+                        TranslateMenuItemNames(createdMenuItems);
+                    }
+
                     break;
 
                 case ItemType.Hairstyle:
-                    var hairInstallers = ModularAvatarOps.CreateTogglesForSelection(avatarRoot, new List<GameObject> { instance });
+                    var hairInstallers = ModularAvatarOps.CreateTogglesForSelection(avatarRoot, new List<GameObject> { instance }, out _);
                     foreach (var installer in hairInstallers)
                     {
                         ModularAvatarOps.WireInstallerToCategoryMenu(installer, menuAsset);
@@ -234,6 +268,40 @@ namespace Vrcmst
             Selection.activeGameObject = instance;
             _prefab = null;
             _predictedAvatarName = "";
+        }
+
+        // 生成されたメニュー項目の名前を翻訳して反映する。1つでも失敗したら元の名前のまま残す
+        // (ネットワークエラー等でアイテム追加自体が失敗した状態にならないようにする)。
+        private static void TranslateMenuItemNames(List<ModularAvatarMenuItem> menuItems)
+        {
+            if (menuItems == null || menuItems.Count == 0) return;
+
+            var normalizedNames = menuItems
+                .Select(item => TranslationOps.NormalizeForTranslation(item.Control.name))
+                .ToArray();
+
+            string[] translated;
+            try
+            {
+                translated = TranslationOps.Translate(normalizedNames, TranslateFromLanguage, TranslateToLanguage);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[VRCMST] メニュー名の翻訳に失敗しました。元の名前のままにします: " + e.Message);
+                return;
+            }
+
+            for (var i = 0; i < menuItems.Count; i++)
+            {
+                if (string.IsNullOrWhiteSpace(translated[i])) continue;
+
+                var item = menuItems[i];
+                Undo.RecordObject(item, "Translate Menu Item Name");
+                var control = item.Control;
+                control.name = translated[i];
+                item.Control = control;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(item);
+            }
         }
     }
 }

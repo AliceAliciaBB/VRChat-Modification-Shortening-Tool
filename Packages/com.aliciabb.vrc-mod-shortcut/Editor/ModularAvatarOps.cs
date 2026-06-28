@@ -246,9 +246,13 @@ namespace Vrcmst
         // MA本体のToggleCreatorShortcut.CreateToggleForSelectionと同じ方針:
         // 対象が複数なら "<親名> Toggles" サブメニューを作って配下にインストーラー無しのトグルを並べる。
         // 対象が1つなら、その場に単独のトグル+インストーラーを作る。
-        public static List<ModularAvatarMenuInstaller> CreateTogglesForSelection(GameObject avatarRoot, IReadOnlyList<GameObject> targets)
+        // createdMenuItemsには生成した全てのModularAvatarMenuItem(サブメニュー自体も含む)を返す
+        // (呼び出し側でメニュー名の翻訳に使う)。
+        public static List<ModularAvatarMenuInstaller> CreateTogglesForSelection(
+            GameObject avatarRoot, IReadOnlyList<GameObject> targets, out List<ModularAvatarMenuItem> createdMenuItems)
         {
             var installers = new List<ModularAvatarMenuInstaller>();
+            createdMenuItems = new List<ModularAvatarMenuItem>();
             if (targets == null || targets.Count == 0) return installers;
 
             var parent = targets[0].transform.parent;
@@ -268,25 +272,29 @@ namespace Vrcmst
                     type = VRCExpressionsMenu.Control.ControlType.SubMenu,
                     name = submenuName,
                 };
+                createdMenuItems.Add(submenuItem);
 
                 var installer = submenuObj.AddComponent<ModularAvatarMenuInstaller>();
                 installers.Add(installer);
 
                 foreach (var target in targets)
                 {
-                    CreateSingleToggle(avatarRoot, target, submenuObj, false);
+                    CreateSingleToggle(avatarRoot, target, submenuObj, false, out var childMenuItem);
+                    createdMenuItems.Add(childMenuItem);
                 }
             }
             else
             {
-                var installer = CreateSingleToggle(avatarRoot, targets[0], parent.gameObject, true);
+                var installer = CreateSingleToggle(avatarRoot, targets[0], parent.gameObject, true, out var menuItem);
+                createdMenuItems.Add(menuItem);
                 if (installer != null) installers.Add(installer);
             }
 
             return installers;
         }
 
-        private static ModularAvatarMenuInstaller CreateSingleToggle(GameObject avatarRoot, GameObject target, GameObject parent, bool createInstaller)
+        private static ModularAvatarMenuInstaller CreateSingleToggle(
+            GameObject avatarRoot, GameObject target, GameObject parent, bool createInstaller, out ModularAvatarMenuItem menuItem)
         {
             var name = $"{target.name} {(target.activeSelf ? "OFF" : "ON")}";
             var toggle = new GameObject(name);
@@ -301,7 +309,7 @@ namespace Vrcmst
                 Active = !target.activeSelf,
             });
 
-            var menuItem = toggle.AddComponent<ModularAvatarMenuItem>();
+            menuItem = toggle.AddComponent<ModularAvatarMenuItem>();
             menuItem.Control = new VRCExpressionsMenu.Control
             {
                 type = VRCExpressionsMenu.Control.ControlType.Toggle,
