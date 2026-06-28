@@ -66,6 +66,9 @@ namespace Vrcmst
             }
         }
 
+        // EditorGUILayout.ToggleLeftはwordWrap指定のGUIStyleを渡しても折り返し後の高さを
+        // 正しくレイアウトに反映しないため、スタイルを渡せるGetRectオーバーロードで
+        // Unity自身に高さとmargin込みのレイアウトを計算させる。
         private bool WrappedToggleLeft(string label, bool value)
         {
             var content = new GUIContent(label);
