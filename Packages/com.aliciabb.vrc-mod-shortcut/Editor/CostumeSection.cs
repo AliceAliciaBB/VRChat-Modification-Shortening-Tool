@@ -18,7 +18,7 @@ namespace Vrcmst
             Other,
         }
 
-        private static readonly string[] ItemTypeLabels = { "衣装", "髪型", "プレハブ全体のオン/オフのみ", "作成しない" };
+        private static readonly string[] ItemTypeLabels = { "衣装", "髪型", "追加するプレハブのオンオフ", "作成しない" };
         private static readonly ItemType[] ItemTypeValues = { ItemType.Costume, ItemType.Hairstyle, ItemType.ToggleOnly, ItemType.Other };
 
         private const string ReplaceNameWithPrefabNamePrefKey = "Vrcmst.CostumeSection.ReplaceNameWithPrefabName";
