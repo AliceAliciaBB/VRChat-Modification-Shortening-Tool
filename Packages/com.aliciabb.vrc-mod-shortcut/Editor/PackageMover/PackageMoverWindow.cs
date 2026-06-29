@@ -120,7 +120,7 @@ public class PackageMoverWindow : EditorWindow
             EditorGUILayout.LabelField($"パッケージ: {_packageName}", EditorStyles.miniLabel);
 
         EditorGUILayout.Space(6);
-        DrawLine();
+        PackageMoverFileOps.DrawLine();
         EditorGUILayout.Space(4);
 
         string destBaseForPreview = _popupIndex < _destinations.Count
@@ -142,7 +142,7 @@ public class PackageMoverWindow : EditorWindow
         }
 
         EditorGUILayout.Space(6);
-        DrawLine();
+        PackageMoverFileOps.DrawLine();
         EditorGUILayout.Space(4);
 
         // ── 移動先ドロップダウン ──
@@ -174,12 +174,12 @@ public class PackageMoverWindow : EditorWindow
             {
                 _customPath = EditorGUILayout.TextField(_customPath);
                 if (GUILayout.Button("選択...", GUILayout.Width(64)))
-                    PickFolder();
+                    _customPath = PackageMoverFileOps.PickFolderUnderAssets(_customPath);
             }
         }
 
         EditorGUILayout.Space(6);
-        DrawLine();
+        PackageMoverFileOps.DrawLine();
         EditorGUILayout.Space(4);
 
         // ── ボタン行 ──
@@ -228,16 +228,8 @@ public class PackageMoverWindow : EditorWindow
             string dst = destBase + "/" + _candidates[i].RelativeDestPath;
 
             // パターン2では作者フォルダ階層が移動先にまだ無い場合があるため、親フォルダをここで確保する。
-            EnsureFolder(Path.GetDirectoryName(dst).Replace('\\', '/'));
-
-            if (AssetDatabase.IsValidFolder(dst))
-                MergeFolder(src, dst);
-            else
-            {
-                string err = AssetDatabase.MoveAsset(src, dst);
-                if (!string.IsNullOrEmpty(err))
-                    Debug.LogError($"[PackageMover] 移動失敗: {src} → {dst}\n{err}");
-            }
+            PackageMoverFileOps.EnsureFolder(Path.GetDirectoryName(dst).Replace('\\', '/'));
+            PackageMoverFileOps.MoveOrMerge(src, dst);
 
             // 1件だけ移動した場合はそのフォルダへ、複数の場合は destBase へ
             if (movedCount == 0) focusPath = dst;
@@ -258,100 +250,12 @@ public class PackageMoverWindow : EditorWindow
         EditorGUIUtility.PingObject(obj);
     }
 
-    // 再帰マージ: src の中身を dst へ移動し、空になった src を削除する
-    static void MergeFolder(string src, string dst)
-    {
-        // 子フォルダを再帰処理
-        foreach (string subSrc in AssetDatabase.GetSubFolders(src))
-        {
-            string name   = Path.GetFileName(subSrc);
-            string subDst = dst + "/" + name;
-
-            if (!AssetDatabase.IsValidFolder(subDst))
-                AssetDatabase.CreateFolder(dst, name);
-
-            MergeFolder(subSrc, subDst);
-        }
-
-        // 直下ファイルを移動（物理ファイルシステムを使って列挙）
-        string physDir = Path.Combine(Application.dataPath,
-            src.Substring("Assets/".Length)).Replace('\\', '/');
-
-        if (Directory.Exists(physDir))
-        {
-            foreach (string physFile in Directory.GetFiles(physDir, "*", SearchOption.TopDirectoryOnly))
-            {
-                if (physFile.EndsWith(".meta")) continue;
-
-                string fileName = Path.GetFileName(physFile);
-                string fileSrc  = src + "/" + fileName;
-                string fileDst  = dst + "/" + fileName;
-
-                if (AssetDatabase.LoadAssetAtPath<Object>(fileDst) != null)
-                {
-                    int choice = EditorUtility.DisplayDialogComplex(
-                        "ファイル競合",
-                        $"既に存在します:\n{fileDst}\n\n上書きしますか？",
-                        "上書き", "スキップ", "キャンセル");
-
-                    if (choice == 0)
-                    {
-                        AssetDatabase.DeleteAsset(fileDst);
-                        AssetDatabase.MoveAsset(fileSrc, fileDst);
-                    }
-                }
-                else
-                {
-                    string err = AssetDatabase.MoveAsset(fileSrc, fileDst);
-                    if (!string.IsNullOrEmpty(err))
-                        Debug.LogError($"[PackageMover] {fileSrc} → {fileDst}: {err}");
-                }
-            }
-        }
-
-        // src が空になったら削除
-        if (AssetDatabase.GetSubFolders(src).Length == 0 &&
-            AssetDatabase.FindAssets("", new[] { src }).Length == 0)
-        {
-            AssetDatabase.DeleteAsset(src);
-        }
-    }
-
     // ─── ユーティリティ ────────────────────────────────────
-
-    void PickFolder()
-    {
-        string selected = EditorUtility.OpenFolderPanel("移動先フォルダ", Application.dataPath, "");
-        if (string.IsNullOrEmpty(selected)) return;
-
-        string dataPath = Application.dataPath.Replace('\\', '/');
-        selected = selected.Replace('\\', '/');
-
-        if (selected.StartsWith(dataPath))
-            _customPath = "Assets" + selected.Substring(dataPath.Length);
-        else
-            EditorUtility.DisplayDialog("エラー", "Assets フォルダ以下を選択してください。", "OK");
-    }
-
-    static void EnsureFolder(string assetPath)
-    {
-        if (string.IsNullOrEmpty(assetPath) || AssetDatabase.IsValidFolder(assetPath)) return;
-        string parent = Path.GetDirectoryName(assetPath).Replace('\\', '/');
-        string name   = Path.GetFileName(assetPath);
-        EnsureFolder(parent);
-        AssetDatabase.CreateFolder(parent, name);
-    }
 
     bool AnyChecked()
     {
         foreach (var c in _checked)
             if (c) return true;
         return false;
-    }
-
-    static void DrawLine()
-    {
-        var rect = EditorGUILayout.GetControlRect(false, 1);
-        EditorGUI.DrawRect(rect, new Color(0.35f, 0.35f, 0.35f));
     }
 }
