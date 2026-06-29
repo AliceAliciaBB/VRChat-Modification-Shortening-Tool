@@ -7,18 +7,19 @@ using UnityEngine;
 namespace Vrcmst
 {
     // 手順書の「③アイテム追加」に対応。プレハブを格納先へ追加し、
-    // メニュー作成タイプ(衣装/髪型/作成しない)に応じて以降の処理を分岐する。
+    // メニュー作成タイプ(衣装/髪型/プレハブ全体のオン/オフのみ/作成しない)に応じて以降の処理を分岐する。
     internal class CostumeSection
     {
         private enum ItemType
         {
             Costume,
             Hairstyle,
+            ToggleOnly,
             Other,
         }
 
-        private static readonly string[] ItemTypeLabels = { "衣装", "髪型", "作成しない" };
-        private static readonly ItemType[] ItemTypeValues = { ItemType.Costume, ItemType.Hairstyle, ItemType.Other };
+        private static readonly string[] ItemTypeLabels = { "衣装", "髪型", "プレハブ全体のオン/オフのみ", "作成しない" };
+        private static readonly ItemType[] ItemTypeValues = { ItemType.Costume, ItemType.Hairstyle, ItemType.ToggleOnly, ItemType.Other };
 
         private const string ReplaceNameWithPrefabNamePrefKey = "Vrcmst.CostumeSection.ReplaceNameWithPrefabName";
         private const string ShowTranslationSectionPrefKey = "Vrcmst.CostumeSection.ShowTranslationSection";
@@ -316,6 +317,16 @@ namespace Vrcmst
                     }
 
                     // 既存の他の髪型との排他切り替えは④セクションで設定する。
+                    break;
+
+                case ItemType.ToggleOnly:
+                    // SetupOutfitや子オブジェクトへの分解は行わず、追加したプレハブ全体に単独のON/OFFトグルだけを作る。
+                    var toggleOnlyInstallers = ModularAvatarOps.CreateTogglesForSelection(avatarRoot, new List<GameObject> { instance }, out _);
+                    foreach (var installer in toggleOnlyInstallers)
+                    {
+                        ModularAvatarOps.WireInstallerToCategoryMenu(installer, menuAsset);
+                    }
+
                     break;
 
                 case ItemType.Other:
