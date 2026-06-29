@@ -131,7 +131,7 @@ public class PackageMoverWindow : EditorWindow
         EditorGUILayout.LabelField("追加されたフォルダ", EditorStyles.boldLabel);
         using (new EditorGUI.IndentLevelScope(1))
         {
-            var hintStyle = new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.gray } };
+            var hintStyle = new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = new Color(0.8f, 0.8f, 0.8f) } };
 
             for (int i = 0; i < _candidates.Count; i++)
             {
@@ -162,7 +162,7 @@ public class PackageMoverWindow : EditorWindow
             string previewPath = _popupIndex < _destinations.Count
                 ? _destinations[_popupIndex].path
                 : _customPath;
-            var style = new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.gray } };
+            var style = new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = new Color(0.8f, 0.8f, 0.8f) } };
             EditorGUILayout.LabelField(previewPath, style);
         }
 

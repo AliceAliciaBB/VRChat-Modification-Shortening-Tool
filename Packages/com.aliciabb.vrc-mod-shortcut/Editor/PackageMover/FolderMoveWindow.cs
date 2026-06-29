@@ -16,13 +16,23 @@ public class FolderMoveWindow : EditorWindow
 
     int OtherIndex => _destinations.Count;
 
-    [MenuItem("ALICILIA/フォルダ移動ツール")]
+    // Assets/ プレフィックスにより、Projectウィンドウのフォルダ右クリックメニューと
+    // 上部の「Assets」メニューの両方に表示される。
+    [MenuItem("Assets/ALICILIA/ファイル移動ツール")]
     public static void ShowWindow()
     {
-        var window = GetWindow<FolderMoveWindow>("フォルダ移動");
+        var window = GetWindow<FolderMoveWindow>("ファイル移動");
         window.minSize = new Vector2(420, 260);
         window.Show();
         window.Focus();
+    }
+
+    [MenuItem("Assets/ALICILIA/ファイル移動ツール", true)]
+    public static bool ValidateShowWindow()
+    {
+        var obj = Selection.activeObject;
+        if (obj == null) return false;
+        return AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(obj));
     }
 
     void OnEnable()
@@ -45,7 +55,7 @@ public class FolderMoveWindow : EditorWindow
     void OnGUI()
     {
         EditorGUILayout.Space(6);
-        EditorGUILayout.LabelField("フォルダ移動ツール", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("ファイル移動ツール", EditorStyles.boldLabel);
         using (new EditorGUI.IndentLevelScope(1))
             EditorGUILayout.LabelField("Projectウィンドウで選択中のフォルダが移動対象になります。", EditorStyles.miniLabel);
 
@@ -84,7 +94,7 @@ public class FolderMoveWindow : EditorWindow
             }
 
             string previewPath = _popupIndex < _destinations.Count ? _destinations[_popupIndex].path : _customPath;
-            var grayStyle = new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.gray } };
+            var grayStyle = new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = new Color(0.8f, 0.8f, 0.8f) } };
             EditorGUILayout.LabelField(previewPath, grayStyle);
         }
 
@@ -102,7 +112,7 @@ public class FolderMoveWindow : EditorWindow
         if (relativeParts != null)
         {
             string destBase = _popupIndex < _destinations.Count ? _destinations[_popupIndex].path : _customPath.TrimEnd('/');
-            var grayStyle = new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.gray } };
+            var grayStyle = new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = new Color(0.8f, 0.8f, 0.8f) } };
             EditorGUILayout.Space(2);
             EditorGUILayout.LabelField($"→ {destBase}/{string.Join("/", relativeParts)}", grayStyle);
         }
