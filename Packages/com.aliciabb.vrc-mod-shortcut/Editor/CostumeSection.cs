@@ -267,6 +267,29 @@ namespace Vrcmst
             Debug.Log($"[VRCMST] メニュー名の翻訳を{newNames.Length}件適用しました。");
         }
 
+        // プレハブにもともと付いていたギミックメニュー(MenuInstaller)が見つかった場合、
+        // 自動統合はせずダイアログで確認した上でM_<categoryName>配下へ統合する。
+        private static void OfferToIntegrateExistingMenuInstallers(GameObject instance, string categoryName, VRCExpressionsMenu menuAsset)
+        {
+            var existingInstallers = ModularAvatarOps.FindUnboundMenuInstallers(instance);
+            if (existingInstallers.Count == 0) return;
+
+            var names = string.Join("\n", existingInstallers.Select(installer => "・" + installer.gameObject.name));
+            var integrate = EditorUtility.DisplayDialog(
+                "既存メニューの統合",
+                $"このプレハブには、もともと以下のメニューインストーラーが付いていました。\n\n{names}\n\n" +
+                $"「{categoryName}」(M_{categoryName})配下に統合しますか？",
+                "統合する",
+                "スキップ");
+
+            if (!integrate) return;
+
+            foreach (var installer in existingInstallers)
+            {
+                ModularAvatarOps.WireInstallerToCategoryMenu(installer, menuAsset);
+            }
+        }
+
         private void AddItem(GameObject avatarRoot, string categoryName, DistanceFadeSection fadeSection)
         {
             var oRoot = MenuSetupSection.GetObjectCategoryRoot(avatarRoot, categoryName);
@@ -278,6 +301,8 @@ namespace Vrcmst
             }
 
             var instance = ModularAvatarOps.InstantiatePrefabUnder(_prefab, oRoot);
+
+            OfferToIntegrateExistingMenuInstallers(instance, categoryName, menuAsset);
 
             if (fadeSection.ApplyMeshSettingsInheritOnAdd)
             {

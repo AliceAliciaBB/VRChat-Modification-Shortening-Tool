@@ -321,6 +321,24 @@ namespace Vrcmst
             return toggle.AddComponent<ModularAvatarMenuInstaller>();
         }
 
+        // プレハブにもともと付いていた(installTargetMenuが未設定でルート直行になる)MenuInstallerを検出する。
+        // ③アイテム追加でインスタンス化した直後に呼ぶことで、このツールが生成した分(直後にWireInstallerToCategoryMenuで
+        // 紐付け済み)を含めず、プレハブ由来の未統合インストーラーだけを拾える。
+        public static List<ModularAvatarMenuInstaller> FindUnboundMenuInstallers(GameObject root)
+        {
+            var result = new List<ModularAvatarMenuInstaller>();
+            var installers = root.GetComponentsInChildren<ModularAvatarMenuInstaller>(true);
+            foreach (var installer in installers)
+            {
+                if (installer.installTargetMenu == null)
+                {
+                    result.Add(installer);
+                }
+            }
+
+            return result;
+        }
+
         // 生成したインストーラーの設置先を、格納先(M_<name>)の実体メニューアセットに直接設定する
         public static void WireInstallerToCategoryMenu(ModularAvatarMenuInstaller installer, VRCExpressionsMenu menuAsset)
         {

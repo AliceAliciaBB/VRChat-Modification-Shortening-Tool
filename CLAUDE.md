@@ -26,6 +26,7 @@
 - `会議/過去のドキュメント/いつもの改変手順.md` — このツールが自動化しようとしていた手作業フローの原典(実装完了済み、内容は実態と乖離しうるが基本放置)。
 - `会議/過去のドキュメント/改修予定.md` — PackageMoverの移動ルール例など、過去の改修検討メモ(実装完了済み、基本放置)。
 - `会議/過去のドキュメント/改変ツール実装プラン.md` — 初回実装時のプラン文書(実装完了済み、基本放置)。
+- `会議/会議決定事項/prefab既存ギミックメニューの統合機能.txt` — プレハブ由来のMenuInstallerをM_<name>配下へ統合する機能の決定事項。実装は`ModularAvatarOps.FindUnboundMenuInstallers`+`CostumeSection.OfferToIntegrateExistingMenuInstallers`。
 
 ## ビルド・実行コマンド
 - Unityプロジェクト本体ではなくUnityプロジェクト内のサブフォルダ(`Assets/VRChat-Modification-Shortening-Tool`)としてGit管理されている。ビルド・コンパイルはUnityエディタ側で行われるため、専用のCLIビルドコマンドはなし。
