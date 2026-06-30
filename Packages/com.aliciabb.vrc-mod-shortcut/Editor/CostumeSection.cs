@@ -3,6 +3,7 @@ using System.Linq;
 using nadena.dev.modular_avatar.core;
 using UnityEditor;
 using UnityEngine;
+using VRC.SDK3.Avatars.ScriptableObjects;
 
 namespace Vrcmst
 {
