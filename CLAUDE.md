@@ -28,6 +28,7 @@
 ## ビルド・実行コマンド
 - Unityプロジェクト本体ではなくUnityプロジェクト内のサブフォルダ(`Assets/VRChat-Modification-Shortening-Tool`)としてGit管理されている。ビルド・コンパイルはUnityエディタ側で行われるため、専用のCLIビルドコマンドはなし。
 - 動作確認はUnityエディタを開いた状態で **ALICILIA** メニューからウィンドウを開いて手動テストする。
+- パッケージのリリース(zip作成・タグ・GitHub Release・VPMリスト更新)は `.github/workflows/release.yml` + `build-listing.yml` で自動化済み。`Packages/com.aliciabb.vrc-mod-shortcut/package.json` の `version` を変更してmainにpushすると、そのバージョンのリリースが既に存在しない場合のみ自動でリリース→`build-listing.yml`がGitHub Pages(`Website/index.json`)を更新する。手動実行(`workflow_dispatch`)も可能。
 
 ## 注意が必要な箇所
 - ④の排他グループ化はMA公式ドキュメントに記載のない挙動(同一パラメータ名+異なるvalueによる排他選択)に依存している。変更後は実機(VRChatアップロード)での動作確認を推奨。
